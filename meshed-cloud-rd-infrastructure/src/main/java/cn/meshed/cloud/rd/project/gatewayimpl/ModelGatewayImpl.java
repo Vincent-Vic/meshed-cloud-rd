@@ -1,0 +1,143 @@
+package cn.meshed.cloud.rd.project.gatewayimpl;
+
+import cn.meshed.cloud.rd.domain.project.Field;
+import cn.meshed.cloud.rd.domain.project.Model;
+import cn.meshed.cloud.rd.domain.project.constant.GroupTypeEnum;
+import cn.meshed.cloud.rd.domain.project.gateway.FieldGateway;
+import cn.meshed.cloud.rd.domain.project.gateway.ModelGateway;
+import cn.meshed.cloud.rd.domain.project.param.FieldByListParam;
+import cn.meshed.cloud.rd.project.convertor.ModelConvertor;
+import cn.meshed.cloud.rd.project.gatewayimpl.database.dataobject.ModelDO;
+import cn.meshed.cloud.rd.project.gatewayimpl.database.mapper.ModelMapper;
+import cn.meshed.cloud.rd.project.query.ModelPageQry;
+import cn.meshed.cloud.utils.AssertUtils;
+import cn.meshed.cloud.utils.CopyUtils;
+import com.alibaba.cola.dto.PageResponse;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import lombok.RequiredArgsConstructor;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * <h1>模型网关实现</h1>
+ *
+ * @author Vincent Vic
+ * @version 1.0
+ */
+@RequiredArgsConstructor
+@Component
+public class ModelGatewayImpl implements ModelGateway {
+
+    private final ModelMapper modelMapper;
+    private final FieldGateway fieldGateway;
+
+
+    /**
+     * @param modelPageQry
+     * @return
+     */
+    @Override
+    public PageResponse<Model> searchPageList(ModelPageQry modelPageQry) {
+        return null;
+    }
+
+    /**
+     * @param model
+     * @return
+     */
+    @Transactional
+    @Override
+    public String save(Model model) {
+        if (model == null) {
+            return null;
+        }
+        AssertUtils.isTrue(!existClassName(model.getProjectKey(), model.getClassName()), "生成类名重复");
+        ModelDO modelDO = ModelConvertor.toEntity(model, queryByUuid(model.getUuid()));
+        //保存模型
+        if (StringUtils.isEmpty(modelDO.getUuid())) {
+            //判断模型新增是否成功
+            AssertUtils.isTrue(modelMapper.insert(modelDO) > 0, "模型新增失败");
+
+        } else {
+            //更新模型
+            //判断模型新增是否成功
+            AssertUtils.isTrue(modelMapper.updateById(modelDO) > 0, "模型更新失败");
+        }
+
+        //保存字段
+        String uuid = modelDO.getUuid();
+        List<Field> fields = getFields(model, uuid);
+        if (CollectionUtils.isNotEmpty(fields)) {
+            AssertUtils.isTrue(fieldGateway.saveBatch(GroupTypeEnum.MODEL, fields), "字段保存失败");
+        }
+
+        //返回uuid
+        return uuid;
+    }
+
+    @NotNull
+    private List<Field> getFields(Model model, String uuid) {
+        if (CollectionUtils.isEmpty(model.getFields())) {
+            return Collections.emptyList();
+        }
+        List<Field> fields = model.getFields().stream().peek(field -> {
+            field.setGroupId(uuid);
+            field.setGroupType(GroupTypeEnum.MODEL);
+        }).collect(Collectors.toList());
+        return fields;
+    }
+
+
+    /**
+     * @param uuid
+     * @return
+     */
+    @Override
+    public Model query(String uuid) {
+        Model model = CopyUtils.copy(queryByUuid(uuid), Model.class);
+        if (model == null) {
+            return null;
+        }
+        FieldByListParam param = FieldByListParam.builder()
+                .groupId(uuid).groupTypes(Collections.singletonList(GroupTypeEnum.MODEL)).build();
+        List<Field> fields = fieldGateway.searchList(param);
+        model.setFields(fields);
+        return model;
+    }
+
+    /**
+     * @param uuid
+     * @return
+     */
+    private ModelDO queryByUuid(String uuid) {
+        if (StringUtils.isEmpty(uuid)) {
+            return null;
+        }
+        return modelMapper.selectById(uuid);
+    }
+
+    /**
+     * 判断className是否在模型中是否已经存在
+     *
+     * @param projectKey 项目key 当项目key不存在时会判断这个系统的类名唯一值
+     * @param className  类名
+     * @return
+     */
+    @Override
+    public boolean existClassName(String projectKey, String className) {
+        AssertUtils.isTrue(StringUtils.isNotBlank(className), "类名不能为空");
+        LambdaQueryWrapper<ModelDO> lqw = new LambdaQueryWrapper<>();
+        //当项目key不存在时会判断这个系统的类名唯一值
+        lqw.eq(StringUtils.isNotBlank(projectKey), ModelDO::getProjectKey, projectKey);
+        lqw.eq(ModelDO::getClassName, className);
+        //仅在项目内保证唯一性，但存在查询全局的情况下可能是会存在多个同名类名的业务
+        return modelMapper.selectCount(lqw) > 0;
+    }
+}

@@ -1,0 +1,22 @@
+spring:
+  cloud:
+    stream:
+      bindings:
+        projectInitialization:
+          destination: project-initialization
+        initProjectWarehouse-in-0:
+          destination: project-initialization
+          group: warehouse
+        initSystemConfig-in-0:
+          destination: project-initialization
+          group: systemConfig
+        warehouseInitialize:
+          destination: warehouse-initialize
+        initWarehouseSkeleton-in-0:
+          destination: warehouse-initialize
+          group: warehouse
+        initWarehouseMember-in-0:
+          destination: warehouse-initialize
+          group: systemConfig
+      function:
+        definition: initProjectWarehouse;initSystemConfig;initWarehouseSkeleton;initWarehouseMember

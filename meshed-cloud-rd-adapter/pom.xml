@@ -14,6 +14,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+        </dependency>
+        <dependency>
             <groupId>cn.meshed.cloud.rd</groupId>
             <artifactId>meshed-cloud-rd-client</artifactId>
         </dependency>

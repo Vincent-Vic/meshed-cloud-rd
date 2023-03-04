@@ -28,16 +28,20 @@
         </dependency>
         <!-- COLA components End-->
         <dependency>
-            <groupId>cn.meshed.base</groupId>
-            <artifactId>meshed-cloud-common-starter</artifactId>
+            <groupId>cn.meshed.cloud</groupId>
+            <artifactId>meshed-cloud-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>cn.meshed.base</groupId>
-            <artifactId>meshed-cloud-cqrs-starter</artifactId>
+            <groupId>cn.meshed.cloud</groupId>
+            <artifactId>meshed-cloud-cqrs</artifactId>
         </dependency>
         <dependency>
             <groupId>cn.meshed.cloud.rd</groupId>
             <artifactId>meshed-cloud-rd-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cn.meshed.cloud</groupId>
+            <artifactId>meshed-cloud-context-starter</artifactId>
         </dependency>
     </dependencies>
 </project>
