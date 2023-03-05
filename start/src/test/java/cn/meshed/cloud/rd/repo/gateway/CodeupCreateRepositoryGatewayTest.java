@@ -1,11 +1,11 @@
-package cn.meshed.cloud.rd.deployment.gateway;
+package cn.meshed.cloud.rd.repo.gateway;
 
 import cn.meshed.cloud.rd.ProviderApplication;
 import cn.meshed.cloud.rd.deployment.executor.query.ScaffoldTemplateQryExe;
-import cn.meshed.cloud.rd.domain.deployment.CreateRepository;
-import cn.meshed.cloud.rd.domain.deployment.Repository;
 import cn.meshed.cloud.rd.domain.deployment.ScaffoldTemplate;
-import cn.meshed.cloud.rd.domain.deployment.gateway.RepositoryGateway;
+import cn.meshed.cloud.rd.domain.repo.CreateRepository;
+import cn.meshed.cloud.rd.domain.repo.Repository;
+import cn.meshed.cloud.rd.domain.repo.gateway.RepositoryGateway;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;

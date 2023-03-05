@@ -1,11 +1,11 @@
 package cn.meshed.cloud.rd.project.executor.command;
 
 import cn.meshed.cloud.cqrs.CommandExecute;
-import cn.meshed.cloud.rd.domain.deployment.CreateRepositoryGroup;
-import cn.meshed.cloud.rd.domain.deployment.RepositoryGroup;
-import cn.meshed.cloud.rd.domain.deployment.gateway.RepositoryGateway;
 import cn.meshed.cloud.rd.domain.project.Project;
 import cn.meshed.cloud.rd.domain.project.gateway.ProjectGateway;
+import cn.meshed.cloud.rd.domain.repo.CreateRepositoryGroup;
+import cn.meshed.cloud.rd.domain.repo.RepositoryGroup;
+import cn.meshed.cloud.rd.domain.repo.gateway.RepositoryGateway;
 import cn.meshed.cloud.rd.project.command.ProjectCmd;
 import cn.meshed.cloud.rd.project.enums.ProjectAccessModeEnum;
 import cn.meshed.cloud.rd.project.event.ProjectInitializeEvent;

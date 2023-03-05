@@ -1,14 +1,22 @@
 package cn.meshed.cloud.rd.deployment.gatewayimpl;
 
 import cn.hutool.http.HttpStatus;
-import cn.meshed.cloud.rd.domain.deployment.CreateRepository;
-import cn.meshed.cloud.rd.domain.deployment.CreateRepositoryGroup;
-import cn.meshed.cloud.rd.domain.deployment.Repository;
-import cn.meshed.cloud.rd.domain.deployment.RepositoryGroup;
-import cn.meshed.cloud.rd.domain.deployment.gateway.RepositoryGateway;
+import cn.meshed.cloud.rd.domain.repo.CommitRepositoryFile;
+import cn.meshed.cloud.rd.domain.repo.CreateRepository;
+import cn.meshed.cloud.rd.domain.repo.CreateRepositoryGroup;
+import cn.meshed.cloud.rd.domain.repo.ListRepositoryTree;
+import cn.meshed.cloud.rd.domain.repo.Repository;
+import cn.meshed.cloud.rd.domain.repo.RepositoryFile;
+import cn.meshed.cloud.rd.domain.repo.RepositoryGroup;
+import cn.meshed.cloud.rd.domain.repo.RepositoryTreeItem;
+import cn.meshed.cloud.rd.domain.repo.constant.ListRepositoryTreeType;
+import cn.meshed.cloud.rd.domain.repo.gateway.RepositoryGateway;
 import cn.meshed.cloud.utils.AssertUtils;
+import cn.meshed.cloud.utils.CopyUtils;
 import com.alibaba.cola.exception.SysException;
 import com.aliyun.devops20210625.Client;
+import com.aliyun.devops20210625.models.CreateFileRequest;
+import com.aliyun.devops20210625.models.CreateFileResponse;
 import com.aliyun.devops20210625.models.CreateRepositoryGroupRequest;
 import com.aliyun.devops20210625.models.CreateRepositoryGroupResponse;
 import com.aliyun.devops20210625.models.CreateRepositoryGroupResponseBody;
@@ -18,11 +26,22 @@ import com.aliyun.devops20210625.models.CreateRepositoryResponseBody;
 import com.aliyun.devops20210625.models.GetRepositoryRequest;
 import com.aliyun.devops20210625.models.GetRepositoryResponse;
 import com.aliyun.devops20210625.models.GetRepositoryResponseBody;
+import com.aliyun.devops20210625.models.ListRepositoryTreeRequest;
+import com.aliyun.devops20210625.models.ListRepositoryTreeResponse;
+import com.aliyun.devops20210625.models.ListRepositoryTreeResponseBody;
+import com.aliyun.devops20210625.models.UpdateFileRequest;
+import com.aliyun.devops20210625.models.UpdateFileResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * <h1>存储库 - 云效实现 </h1>
@@ -30,6 +49,7 @@ import org.springframework.stereotype.Component;
  * @author Vincent Vic
  * @version 1.0
  */
+@Slf4j
 @RequiredArgsConstructor
 @Component
 public class CodeupRepositoryGatewayImpl implements RepositoryGateway {
@@ -153,6 +173,156 @@ public class CodeupRepositoryGatewayImpl implements RepositoryGateway {
             throw new SysException(groupResponseBody.errorCode + "#" + groupResponseBody.errorMessage);
         } catch (Exception e) {
             throw new SysException(e.getMessage());
+        }
+    }
+
+    /**
+     * 查询代码库的文件树
+     *
+     * @param listRepositoryTree 参数
+     * @return 文件树列表
+     */
+    @Override
+    public List<RepositoryTreeItem> listRepositoryTree(ListRepositoryTree listRepositoryTree) {
+        ListRepositoryTreeRequest listRepositoryTreeRequest = new ListRepositoryTreeRequest();
+        listRepositoryTreeRequest.setOrganizationId(organizationId);
+        listRepositoryTreeRequest.setType(ListRepositoryTreeType.RECURSIVE.name());
+        try {
+            ListRepositoryTreeResponse listTreeResponse
+                    = client.listRepositoryTree(String.valueOf(listRepositoryTree.getRepositoryId()),
+                    listRepositoryTreeRequest);
+            if (listTreeResponse.getStatusCode() == HttpStatus.HTTP_OK && listTreeResponse.getBody().getSuccess()) {
+                List<ListRepositoryTreeResponseBody.ListRepositoryTreeResponseBodyResult> result =
+                        listTreeResponse.getBody().getResult();
+                return CopyUtils.copyListProperties(result, RepositoryTreeItem::new);
+
+            }
+            return null;
+        } catch (Exception e) {
+            throw new SysException(e.getMessage());
+        }
+    }
+
+    /**
+     * 提交文件到仓库
+     *
+     * @param commitRepositoryFile 提交信息
+     * @return 数量
+     */
+    @Override
+    public Integer commitRepositoryFile(CommitRepositoryFile commitRepositoryFile) {
+        //查询文件树
+        List<RepositoryTreeItem> repositoryTreeList = getRepositoryTreeItemList(commitRepositoryFile);
+        //分类更新或修改
+        List<RepositoryFile> newFiles = new ArrayList<>();
+        List<RepositoryFile> oldFiles = new ArrayList<>();
+        handleSaveOrUpdate(commitRepositoryFile.getFiles(), repositoryTreeList, newFiles, oldFiles);
+        //新建代码提交
+        int commitCount = newCommit(commitRepositoryFile, newFiles);
+        //更新代码提交
+        commitCount += updateCommit(commitRepositoryFile, oldFiles);
+
+        return commitCount;
+    }
+
+    /**
+     * 更新文件提交
+     *
+     * @param commitRepositoryFile 提交信息
+     * @param oldFiles             旧文件列表
+     * @return 成功数
+     */
+    private int updateCommit(CommitRepositoryFile commitRepositoryFile, List<RepositoryFile> oldFiles) {
+        if (CollectionUtils.isNotEmpty(oldFiles)) {
+            int success = 0;
+            for (RepositoryFile file : oldFiles) {
+                UpdateFileRequest updateFileRequest = new UpdateFileRequest();
+                updateFileRequest.setOrganizationId(organizationId);
+                updateFileRequest.setBranchName(commitRepositoryFile.getBranchName());
+                updateFileRequest.setCommitMessage(commitRepositoryFile.getCommitMessage());
+                updateFileRequest.setContent(file.getContent());
+                updateFileRequest.setNewPath(file.getFilePath());
+                updateFileRequest.setOldPath(file.getOldFilePath());
+                try {
+                    UpdateFileResponse fileResponse = client
+                            .updateFile(String.valueOf(commitRepositoryFile.getRepositoryId()), updateFileRequest);
+                    if (fileResponse.getBody().getSuccess()) {
+                        success++;
+                    } else {
+                        log.error("Commit repository update file Error:{} | {}",
+                                fileResponse.getBody().errorCode, fileResponse.getBody().errorMessage);
+                    }
+                } catch (Exception e) {
+                    //此问题需要排除解决，无法抛出异常
+                    log.error("Commit repository update file Exception:{}", e.getMessage(), e);
+                }
+            }
+            return success;
+        }
+        return 0;
+    }
+
+    /**
+     * 提交新代码
+     *
+     * @param commitRepositoryFile 提交信息
+     * @param newFiles             新文件列表
+     * @return 成功数
+     */
+    private int newCommit(CommitRepositoryFile commitRepositoryFile, List<RepositoryFile> newFiles) {
+        if (CollectionUtils.isNotEmpty(newFiles)) {
+            int success = 0;
+            for (RepositoryFile file : newFiles) {
+                CreateFileRequest createFileRequest = new CreateFileRequest();
+                createFileRequest.setOrganizationId(organizationId);
+                createFileRequest.setFilePath(file.getFilePath());
+                createFileRequest.setContent(file.getContent());
+                createFileRequest.setCommitMessage(commitRepositoryFile.getCommitMessage());
+                createFileRequest.setBranchName(commitRepositoryFile.getBranchName());
+                try {
+                    CreateFileResponse fileResponse = client
+                            .createFile(String.valueOf(commitRepositoryFile.getRepositoryId()), createFileRequest);
+                    if (fileResponse.getBody().getSuccess()) {
+                        success++;
+                    } else {
+                        log.error("Commit repository new file Error:{} | {}",
+                                fileResponse.getBody().errorCode, fileResponse.getBody().errorMessage);
+                    }
+                } catch (Exception e) {
+                    //此问题需要排除解决，无法抛出异常
+                    log.error("Commit repository new file Exception:{}", e.getMessage(), e);
+                }
+            }
+            return success;
+        }
+        return 0;
+    }
+
+    private List<RepositoryTreeItem> getRepositoryTreeItemList(CommitRepositoryFile commitRepositoryFile) {
+        ListRepositoryTree listRepositoryTree = new ListRepositoryTree();
+        listRepositoryTree.setRepositoryId(commitRepositoryFile.getRepositoryId());
+        listRepositoryTree.setRefName(commitRepositoryFile.getBranchName());
+        listRepositoryTree.setType(ListRepositoryTreeType.RECURSIVE);
+        List<RepositoryTreeItem> repositoryTreeList = listRepositoryTree(listRepositoryTree);
+        return repositoryTreeList;
+    }
+
+    private void handleSaveOrUpdate(List<RepositoryFile> files, List<RepositoryTreeItem> repositoryTreeList, List<RepositoryFile> newFiles, List<RepositoryFile> oldFiles) {
+        if (CollectionUtils.isNotEmpty(files)) {
+            List<String> repoFileList = repositoryTreeList.stream()
+                    .map(RepositoryTreeItem::getPath).collect(Collectors.toList());
+            for (RepositoryFile file : files) {
+                //避免操作空的情况
+                if (StringUtils.isBlank(file.getFilePath())) {
+                    continue;
+                }
+                //区分老旧
+                if (repoFileList.contains(file.getFilePath())) {
+                    oldFiles.add(file);
+                } else {
+                    newFiles.add(file);
+                }
+            }
         }
     }
 

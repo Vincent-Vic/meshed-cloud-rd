@@ -1,4 +1,4 @@
-package cn.meshed.cloud.rd.domain.deployment;
+package cn.meshed.cloud.rd.domain.repo;
 
 import lombok.Data;
 
