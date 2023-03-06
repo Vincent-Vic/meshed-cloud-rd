@@ -1,6 +1,7 @@
 package cn.meshed.cloud.rd.domain.repo.gateway;
 
 import cn.meshed.cloud.rd.domain.repo.CommitRepositoryFile;
+import cn.meshed.cloud.rd.domain.repo.CreateBranch;
 import cn.meshed.cloud.rd.domain.repo.CreateRepository;
 import cn.meshed.cloud.rd.domain.repo.CreateRepositoryGroup;
 import cn.meshed.cloud.rd.domain.repo.ListRepositoryTree;
@@ -58,4 +59,12 @@ public interface RepositoryGateway {
      * @return 数量
      */
     Integer commitRepositoryFile(CommitRepositoryFile commitRepositoryFile);
+
+    /**
+     * 创建分支
+     *
+     * @param createBranch 分支
+     * @return 成功与否
+     */
+    boolean createBranch(CreateBranch createBranch);
 }

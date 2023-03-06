@@ -18,15 +18,26 @@ public class Skeleton {
      */
     private String engineTemplate;
     /**
-     * 构建项目的制品信息
+     * 基本包名
      */
-    private Artifact artifact;
+    private String basePackage;
+    /**
+     * 仓库名称
+     */
+    private String repositoryName;
+    /**
+     * 仓库ID
+     */
+    private Long repositoryId;
+    /**
+     * 项目key
+     */
+    private String projectKey;
 
     /**
      * 校验
      */
     public void verification() {
         AssertUtils.isTrue(StringUtils.isNotBlank(this.engineTemplate), "引擎模板不能为空");
-        this.artifact.verification();
     }
 }

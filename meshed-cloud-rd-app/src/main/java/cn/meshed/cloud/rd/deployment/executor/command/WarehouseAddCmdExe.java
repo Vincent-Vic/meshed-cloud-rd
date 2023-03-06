@@ -7,8 +7,11 @@ import cn.meshed.cloud.rd.domain.deployment.Warehouse;
 import cn.meshed.cloud.rd.domain.deployment.gateway.WarehouseGateway;
 import cn.meshed.cloud.rd.domain.project.Project;
 import cn.meshed.cloud.rd.domain.project.gateway.ProjectGateway;
+import cn.meshed.cloud.rd.domain.repo.CommitRepositoryFile;
+import cn.meshed.cloud.rd.domain.repo.CreateBranch;
 import cn.meshed.cloud.rd.domain.repo.CreateRepository;
 import cn.meshed.cloud.rd.domain.repo.Repository;
+import cn.meshed.cloud.rd.domain.repo.RepositoryFile;
 import cn.meshed.cloud.rd.domain.repo.gateway.RepositoryGateway;
 import cn.meshed.cloud.rd.project.enums.ProjectAccessModeEnum;
 import cn.meshed.cloud.stream.StreamBridgeSender;
@@ -19,11 +22,17 @@ import com.alibaba.cola.dto.Response;
 import com.alibaba.cola.dto.SingleResponse;
 import com.alibaba.cola.exception.SysException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
+
 import static cn.meshed.cloud.rd.domain.deployment.constant.MqConstant.WAREHOUSE_INITIALIZE;
+import static cn.meshed.cloud.rd.domain.repo.constant.RepoConstant.DEVELOP;
+import static cn.meshed.cloud.rd.domain.repo.constant.RepoConstant.MASTER;
+import static cn.meshed.cloud.rd.domain.repo.constant.RepoConstant.RELEASE;
 
 /**
  * <h1>新建仓库，非导入</h1>
@@ -31,6 +40,7 @@ import static cn.meshed.cloud.rd.domain.deployment.constant.MqConstant.WAREHOUSE
  * @author Vincent Vic
  * @version 1.0
  */
+@Slf4j
 @RequiredArgsConstructor
 @Component
 public class WarehouseAddCmdExe implements CommandExecute<WarehouseAddCmd, SingleResponse<Warehouse>> {
@@ -53,6 +63,7 @@ public class WarehouseAddCmdExe implements CommandExecute<WarehouseAddCmd, Singl
             Project project = checkWarehouseParamWithGetProject(warehouseAddCmd);
             //构建实体仓库
             Repository repository = getRepositoryWithBuild(warehouseAddCmd, project);
+            initBranch(repository.getRepositoryId());
             //创建逻辑仓库
             Warehouse warehouse = warehouseGateway.save(buildWarehouse(warehouseAddCmd, project, repository));
             //判断是否根据模板创建
@@ -65,6 +76,26 @@ public class WarehouseAddCmdExe implements CommandExecute<WarehouseAddCmd, Singl
         } catch (SysException sysException) {
             return ResultUtils.fail(sysException.getMessage());
         }
+    }
+
+    private void initBranch(Long repositoryId) {
+        //master 需要占位文件
+        if (initRepo(repositoryId) != 1) {
+            log.error("init master fail");
+            return;
+        }
+        repositoryGateway.createBranch(new CreateBranch(repositoryId, RELEASE, MASTER));
+        repositoryGateway.createBranch(new CreateBranch(repositoryId, DEVELOP, MASTER));
+    }
+
+    private Integer initRepo(Long repositoryId) {
+        CommitRepositoryFile commitRepositoryFile = new CommitRepositoryFile();
+        commitRepositoryFile.setRepositoryId(repositoryId);
+        commitRepositoryFile.setCommitMessage("init");
+        commitRepositoryFile.setBranchName(MASTER);
+        commitRepositoryFile.setFiles(Collections.singletonList(new RepositoryFile("README.md", "# Meshed Cloud")));
+        Integer commitCount = repositoryGateway.commitRepositoryFile(commitRepositoryFile);
+        return commitCount;
     }
 
     /**

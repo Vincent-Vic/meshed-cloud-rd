@@ -2,6 +2,7 @@ package cn.meshed.cloud.rd.deployment.gatewayimpl;
 
 import cn.hutool.http.HttpStatus;
 import cn.meshed.cloud.rd.domain.repo.CommitRepositoryFile;
+import cn.meshed.cloud.rd.domain.repo.CreateBranch;
 import cn.meshed.cloud.rd.domain.repo.CreateRepository;
 import cn.meshed.cloud.rd.domain.repo.CreateRepositoryGroup;
 import cn.meshed.cloud.rd.domain.repo.ListRepositoryTree;
@@ -15,6 +16,8 @@ import cn.meshed.cloud.utils.AssertUtils;
 import cn.meshed.cloud.utils.CopyUtils;
 import com.alibaba.cola.exception.SysException;
 import com.aliyun.devops20210625.Client;
+import com.aliyun.devops20210625.models.CreateBranchRequest;
+import com.aliyun.devops20210625.models.CreateBranchResponse;
 import com.aliyun.devops20210625.models.CreateFileRequest;
 import com.aliyun.devops20210625.models.CreateFileResponse;
 import com.aliyun.devops20210625.models.CreateRepositoryGroupRequest;
@@ -223,6 +226,32 @@ public class CodeupRepositoryGatewayImpl implements RepositoryGateway {
         commitCount += updateCommit(commitRepositoryFile, oldFiles);
 
         return commitCount;
+    }
+
+    /**
+     * 创建分支
+     *
+     * @param createBranch 分支
+     * @return 成功与否
+     */
+    @Override
+    public boolean createBranch(CreateBranch createBranch) {
+        CreateBranchRequest createBranchRequest = new CreateBranchRequest();
+        createBranchRequest.setOrganizationId(organizationId);
+        createBranchRequest.setRef(createBranch.getRef());
+        createBranchRequest.setBranchName(createBranch.getBranchName());
+
+        try {
+            CreateBranchResponse branchResponse = client
+                    .createBranch(String.valueOf(createBranch.getRepositoryId()), createBranchRequest);
+            if (branchResponse.getBody().getSuccess()) {
+                return true;
+            }
+            log.error("{} create branch error : {}", createBranch.getBranchName(), branchResponse.getBody().getErrorMessage());
+        } catch (Exception e) {
+            log.error("{} create branch fail : {} ", createBranch.getBranchName(), e.getMessage());
+        }
+        return false;
     }
 
     /**
