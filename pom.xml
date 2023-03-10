@@ -24,13 +24,13 @@
         <mybatis-starter.version>2.2.2</mybatis-starter.version>
         <meshed.cola.version>1.0.0-SNAPSHOT</meshed.cola.version>
         <meshed-cloud-start-starter.version>1.0.0-SNAPSHOT</meshed-cloud-start-starter.version>
-        <meshed-cloud-doc-starter.version>1.0.0-SNAPSHOT</meshed-cloud-doc-starter.version>
         <meshed.mysql.version>1.0.0-SNAPSHOT</meshed.mysql.version>
         <meshed.common.version>1.0.0-SNAPSHOT</meshed.common.version>
         <meshed.cqrs.version>1.0.0-SNAPSHOT</meshed.cqrs.version>
         <meshed.dubbo.version>1.0.0-SNAPSHOT</meshed.dubbo.version>
         <meshed.context.version>1.0.0-SNAPSHOT</meshed.context.version>
         <meshde.cloud.stream.version>1.0.0-SNAPSHOT</meshde.cloud.stream.version>
+        <meshde.cloud.rd.codegen.version>1.0.0-SNAPSHOT</meshde.cloud.rd.codegen.version>
     </properties>
 
     <modules>
@@ -92,12 +92,6 @@
 
             <dependency>
                 <groupId>cn.meshed.cloud</groupId>
-                <artifactId>meshed-cloud-doc-starter</artifactId>
-                <version>${meshed-cloud-doc-starter.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>cn.meshed.cloud</groupId>
                 <artifactId>meshed-cloud-common</artifactId>
                 <version>${meshed.common.version}</version>
             </dependency>
@@ -130,6 +124,11 @@
                 <groupId>cn.meshed.cloud</groupId>
                 <artifactId>meshed-cloud-stream-starter</artifactId>
                 <version>${meshde.cloud.stream.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.meshed.cloud.rd</groupId>
+                <artifactId>meshed-cloud-rd-codegen</artifactId>
+                <version>${meshde.cloud.rd.codegen.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

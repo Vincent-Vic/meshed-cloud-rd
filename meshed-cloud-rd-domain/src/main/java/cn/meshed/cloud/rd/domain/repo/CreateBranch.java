@@ -14,7 +14,7 @@ public class CreateBranch {
     /**
      * 仓库ID
      */
-    private Long repositoryId;
+    private String repositoryId;
 
     /**
      * 分支名称
@@ -26,7 +26,7 @@ public class CreateBranch {
      */
     private String ref;
 
-    public CreateBranch(Long repositoryId, String branchName, String ref) {
+    public CreateBranch(String repositoryId, String branchName, String ref) {
         this.repositoryId = repositoryId;
         this.branchName = branchName;
         this.ref = ref;

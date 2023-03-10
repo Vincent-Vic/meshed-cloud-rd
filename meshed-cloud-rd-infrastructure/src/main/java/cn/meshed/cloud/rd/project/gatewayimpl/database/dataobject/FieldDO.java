@@ -1,6 +1,10 @@
 package cn.meshed.cloud.rd.project.gatewayimpl.database.dataobject;
 
 import cn.meshed.cloud.rd.domain.project.constant.GroupTypeEnum;
+import cn.meshed.cloud.rd.project.enums.BaseGenericsEnum;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -25,6 +29,7 @@ public class FieldDO implements Serializable {
     /**
      * id
      */
+    @TableId(type = IdType.AUTO)
     private Integer id;
 
     /**
@@ -40,11 +45,12 @@ public class FieldDO implements Serializable {
     /**
      * 字段泛型
      */
-    private Boolean generic;
+    private BaseGenericsEnum generic;
 
     /**
      * 字段描述
      */
+    @TableField(value = "`explain`")
     private String explain;
 
     /**

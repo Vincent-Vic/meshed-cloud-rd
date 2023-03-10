@@ -11,7 +11,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
-import java.util.List;
+import java.util.Set;
 
 import static cn.meshed.cloud.rd.domain.project.constant.ProjectConstant.INIT_VERSION;
 import static cn.meshed.cloud.rd.domain.project.constant.ProjectConstant.MODEL_PACKAGE_NAME_FORMAT;
@@ -106,7 +106,7 @@ public class Model implements Serializable {
     /**
      * 相应字段列表
      */
-    private List<Field> fields;
+    private Set<Field> fields;
 
 
     public void initModel(Project project) {

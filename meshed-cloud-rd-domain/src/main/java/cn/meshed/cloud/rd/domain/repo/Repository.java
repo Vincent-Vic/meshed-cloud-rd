@@ -19,7 +19,7 @@ public class Repository {
     /**
      * 仓库ID
      */
-    private Long repositoryId;
+    private String repositoryId;
 
     /**
      * 仓库名称

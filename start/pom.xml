@@ -31,8 +31,8 @@
             <artifactId>meshed-cloud-start-starter</artifactId>
         </dependency>
         <dependency>
-            <groupId>cn.meshed.cloud</groupId>
-            <artifactId>meshed-cloud-doc-starter</artifactId>
+            <groupId>cn.meshed.cloud.rd</groupId>
+            <artifactId>meshed-cloud-rd-codegen</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

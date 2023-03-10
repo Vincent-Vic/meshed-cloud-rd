@@ -71,5 +71,4 @@ public class Field implements Serializable {
      */
     private GroupTypeEnum groupType;
 
-
 }

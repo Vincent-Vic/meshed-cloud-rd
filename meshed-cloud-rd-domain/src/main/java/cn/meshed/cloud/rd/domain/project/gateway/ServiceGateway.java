@@ -7,6 +7,8 @@ import cn.meshed.cloud.rd.domain.project.Service;
 import cn.meshed.cloud.rd.project.query.ServicePageQry;
 import com.alibaba.cola.dto.PageResponse;
 
+import java.util.Set;
+
 /**
  * <h1>服务网关</h1>
  *
@@ -25,4 +27,13 @@ public interface ServiceGateway extends ISave<Service, String>, IQuery<String, S
      * @return
      */
     boolean existMethodName(String projectKey, String className, String method);
+
+    /**
+     * 查询项目的待发布服务详情列表
+     * 注：服务发布需要重建所属这个控制器全部方法，需要将同分组的服务方法一并查询出来
+     *
+     * @param projectKey 项目key
+     * @return 详情列表
+     */
+    Set<Service> waitPublishListByProject(String projectKey);
 }

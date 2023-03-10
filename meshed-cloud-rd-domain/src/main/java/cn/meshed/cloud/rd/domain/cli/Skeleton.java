@@ -28,7 +28,7 @@ public class Skeleton {
     /**
      * 仓库ID
      */
-    private Long repositoryId;
+    private String repositoryId;
     /**
      * 项目key
      */

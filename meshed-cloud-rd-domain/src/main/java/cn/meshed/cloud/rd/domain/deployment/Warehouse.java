@@ -35,7 +35,7 @@ public class Warehouse implements Serializable {
     /**
      * repositoryId
      */
-    private Long repoId;
+    private String repoId;
 
     /**
      * 中文名称

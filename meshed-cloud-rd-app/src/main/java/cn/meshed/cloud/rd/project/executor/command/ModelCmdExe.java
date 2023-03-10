@@ -8,7 +8,7 @@ import cn.meshed.cloud.rd.domain.project.gateway.DomainGateway;
 import cn.meshed.cloud.rd.domain.project.gateway.ModelGateway;
 import cn.meshed.cloud.rd.domain.project.gateway.ProjectGateway;
 import cn.meshed.cloud.rd.project.command.ModelCmd;
-import cn.meshed.cloud.rd.project.data.RequestParamFieldDTO;
+import cn.meshed.cloud.rd.project.data.RequestFieldDTO;
 import cn.meshed.cloud.utils.AssertUtils;
 import cn.meshed.cloud.utils.CopyUtils;
 import cn.meshed.cloud.utils.ResultUtils;
@@ -43,7 +43,11 @@ public class ModelCmdExe implements CommandExecute<ModelCmd, Response> {
     @Override
     public Response execute(ModelCmd modelCmd) {
         Model model = CopyUtils.copy(modelCmd, Model.class);
-        model.setDomainKey(model.getDomainKey());
+        model.setDomainKey(modelCmd.getDomain());
+        AssertUtils.isTrue(StringUtils.isNotBlank(modelCmd.getProjectKey()), "项目Key不能为空");
+        AssertUtils.isTrue(StringUtils.isNotBlank(modelCmd.getDomain()), "所属领域不能为空");
+        AssertUtils.isTrue(StringUtils.isNotBlank(modelCmd.getEnname()), "模型英文名称不能为空");
+        AssertUtils.isTrue(StringUtils.isNotBlank(modelCmd.getName()), "模型中文名称不能为空");
 
         if (StringUtils.isBlank(model.getUuid())) {
             //查询项目，判断项目是否存在，获取项目信息
@@ -58,9 +62,9 @@ public class ModelCmdExe implements CommandExecute<ModelCmd, Response> {
             assert project != null;
             model.initModel(project);
         }
-        List<RequestParamFieldDTO> fields = modelCmd.getFields();
+        List<RequestFieldDTO> fields = modelCmd.getFields();
         if (CollectionUtils.isNotEmpty(fields)) {
-            model.setFields(CopyUtils.copyListProperties(fields, Field::new));
+            model.setFields(CopyUtils.copySetProperties(fields, Field::new));
         }
 
         String uuid = modelGateway.save(model);

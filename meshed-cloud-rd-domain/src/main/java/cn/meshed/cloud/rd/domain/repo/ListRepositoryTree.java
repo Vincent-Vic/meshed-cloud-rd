@@ -20,7 +20,7 @@ public class ListRepositoryTree {
     /**
      * 代码库ID
      */
-    private Long repositoryId;
+    private String repositoryId;
 
     /**
      * 代码仓库内的文件路径，获取该路径下的文件目录，默认获取代码库文件树的全部结构

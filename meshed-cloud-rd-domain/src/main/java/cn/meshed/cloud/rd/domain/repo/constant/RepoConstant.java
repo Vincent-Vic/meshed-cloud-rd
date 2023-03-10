@@ -20,4 +20,8 @@ public interface RepoConstant {
      * 研发分支
      */
     String DEVELOP = "develop";
+    /**
+     * 工作分支 （系统操作的分支）
+     */
+    String WORKSPACE = "workspace";
 }

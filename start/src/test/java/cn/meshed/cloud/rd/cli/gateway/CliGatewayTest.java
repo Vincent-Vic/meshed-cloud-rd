@@ -3,6 +3,7 @@ package cn.meshed.cloud.rd.cli.gateway;
 import cn.meshed.cloud.rd.ProviderApplication;
 import cn.meshed.cloud.rd.domain.cli.Archetype;
 import cn.meshed.cloud.rd.domain.cli.Artifact;
+import cn.meshed.cloud.rd.domain.cli.BuildArchetype;
 import cn.meshed.cloud.rd.domain.cli.gateway.CliGateway;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,7 +39,9 @@ public class CliGatewayTest {
         artifact.setPackageName("cn.meshed.cloud.test");
         artifact.addExtended("domain", "auto");
         artifact.addExtended("projectKey", "test");
-
-        cliGateway.archetype("D://temp//", archetype, artifact);
+        BuildArchetype buildArchetype = new BuildArchetype();
+        buildArchetype.setArchetype(archetype);
+        buildArchetype.setArtifact(artifact);
+        cliGateway.buildArchetype(buildArchetype);
     }
 }

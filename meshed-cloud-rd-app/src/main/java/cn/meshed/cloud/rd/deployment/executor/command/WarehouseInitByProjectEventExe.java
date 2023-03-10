@@ -11,7 +11,8 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
+import java.util.Collection;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
@@ -37,14 +38,15 @@ public class WarehouseInitByProjectEventExe implements EventExecute<ProjectIniti
     public Void execute(ProjectInitializeEvent projectInitializeEvent) {
         System.out.println("Project init " + projectInitializeEvent.getCodeTemplates());
         if (CollectionUtils.isNotEmpty(projectInitializeEvent.getCodeTemplates())) {
-            for (String codeTemplateKey : projectInitializeEvent.getCodeTemplates()) {
-                List<ScaffoldTemplate> templates = scaffoldTemplateQryExe.execute(codeTemplateKey);
-                //根据模板先构建仓库
-                for (ScaffoldTemplate template : templates) {
+            projectInitializeEvent.getCodeTemplates().stream().filter(Objects::nonNull)
+                    //查询模板
+                    .map(scaffoldTemplateQryExe::execute)
+                    //判断非空
+                    .filter(CollectionUtils::isNotEmpty)
+                    //合流
+                    .flatMap(Collection::stream)
                     //创建仓库
-                    warehouseAddCmdExe.execute(buildWarehouseAddCmd(projectInitializeEvent, template));
-                }
-            }
+                    .forEach(template -> warehouseAddCmdExe.execute(buildWarehouseAddCmd(projectInitializeEvent, template)));
         }
         return null;
     }

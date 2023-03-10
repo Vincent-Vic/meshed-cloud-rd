@@ -83,7 +83,7 @@ public class CodeupRepositoryGatewayImpl implements RepositoryGateway {
                 Repository repository = new Repository();
                 CreateRepositoryResponseBody.CreateRepositoryResponseBodyResult result = repositoryBody.getResult();
                 repository.setRepoUrl(result.getHttpUrlToRepo());
-                repository.setRepositoryId(result.getId());
+                repository.setRepositoryId(String.valueOf(result.getId()));
                 repository.setRepositoryName(result.getName());
                 return repository;
             }
@@ -111,7 +111,7 @@ public class CodeupRepositoryGatewayImpl implements RepositoryGateway {
                 Repository repository = new Repository();
                 GetRepositoryResponseBody.GetRepositoryResponseBodyRepository result = repositoryBody.getRepository();
                 repository.setRepoUrl(result.getHttpUrlToRepository());
-                repository.setRepositoryId(result.getId());
+                repository.setRepositoryId(String.valueOf(result.getId()));
                 repository.setRepositoryName(result.getName());
                 return repository;
             }
@@ -243,7 +243,7 @@ public class CodeupRepositoryGatewayImpl implements RepositoryGateway {
 
         try {
             CreateBranchResponse branchResponse = client
-                    .createBranch(String.valueOf(createBranch.getRepositoryId()), createBranchRequest);
+                    .createBranch(createBranch.getRepositoryId(), createBranchRequest);
             if (branchResponse.getBody().getSuccess()) {
                 return true;
             }
@@ -274,7 +274,7 @@ public class CodeupRepositoryGatewayImpl implements RepositoryGateway {
                 updateFileRequest.setOldPath(file.getOldFilePath());
                 try {
                     UpdateFileResponse fileResponse = client
-                            .updateFile(String.valueOf(commitRepositoryFile.getRepositoryId()), updateFileRequest);
+                            .updateFile(commitRepositoryFile.getRepositoryId(), updateFileRequest);
                     if (fileResponse.getBody().getSuccess()) {
                         success++;
                     } else {
@@ -310,7 +310,7 @@ public class CodeupRepositoryGatewayImpl implements RepositoryGateway {
                 createFileRequest.setBranchName(commitRepositoryFile.getBranchName());
                 try {
                     CreateFileResponse fileResponse = client
-                            .createFile(String.valueOf(commitRepositoryFile.getRepositoryId()), createFileRequest);
+                            .createFile(commitRepositoryFile.getRepositoryId(), createFileRequest);
                     if (fileResponse.getBody().getSuccess()) {
                         success++;
                     } else {

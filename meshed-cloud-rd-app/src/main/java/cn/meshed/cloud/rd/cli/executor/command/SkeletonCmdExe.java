@@ -1,34 +1,19 @@
 package cn.meshed.cloud.rd.cli.executor.command;
 
-import cn.hutool.core.io.FileUtil;
 import cn.meshed.cloud.cqrs.CommandExecute;
 import cn.meshed.cloud.rd.cli.executor.query.ArchetypeTemplateQry;
 import cn.meshed.cloud.rd.domain.cli.Archetype;
 import cn.meshed.cloud.rd.domain.cli.Artifact;
+import cn.meshed.cloud.rd.domain.cli.BuildArchetype;
 import cn.meshed.cloud.rd.domain.cli.Skeleton;
 import cn.meshed.cloud.rd.domain.cli.gateway.CliGateway;
-import cn.meshed.cloud.rd.domain.repo.CommitRepositoryFile;
-import cn.meshed.cloud.rd.domain.repo.CreateBranch;
-import cn.meshed.cloud.rd.domain.repo.RepositoryFile;
-import cn.meshed.cloud.rd.domain.repo.gateway.RepositoryGateway;
-import cn.meshed.cloud.utils.IdUtils;
 import cn.meshed.cloud.utils.ResultUtils;
 import com.alibaba.cola.dto.Response;
 import com.alibaba.cola.dto.SingleResponse;
 import com.alibaba.cola.exception.SysException;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.collections4.CollectionUtils;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.springframework.beans.factory.annotation.Value;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
-
-import java.io.File;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-
-import static cn.meshed.cloud.rd.domain.repo.constant.RepoConstant.MASTER;
 
 
 /**
@@ -43,11 +28,6 @@ public class SkeletonCmdExe implements CommandExecute<Skeleton, SingleResponse<S
 
     private final CliGateway cliGateway;
     private final ArchetypeTemplateQry archetypeTemplateQry;
-    private final RepositoryGateway repositoryGateway;
-    @Value("${rd.cli.workspace}")
-    private String workspace;
-    @Value("${rd.repo.task.automate-branch-format}")
-    private String automateBranchFormat;
 
 
     /**
@@ -71,64 +51,16 @@ public class SkeletonCmdExe implements CommandExecute<Skeleton, SingleResponse<S
         artifact.addExtended("domain", "examples");
         artifact.addExtended("projectKey", skeleton.getProjectKey());
 
-        //生成根路径
-        String workspacePath = getWorkspacePath();
 
         try {
-            cliGateway.archetype(workspacePath, archetype, artifact);
+            String branch = cliGateway.archetypeWithPush(skeleton.getRepositoryId(),
+                    new BuildArchetype(archetype, artifact));
+            if (StringUtils.isNotBlank(branch)) {
+                return ResultUtils.fail("原型不存在任何代码");
+            }
+            return ResultUtils.of(branch);
         } catch (SysException sysException) {
             return ResultUtils.fail(sysException.getMessage());
         }
-
-        //上传仓库
-        return commitProject(skeleton, workspacePath);
-    }
-
-    /**
-     * 提交项目代码至仓库
-     *
-     * @param skeleton      骨架信息
-     * @param workspacePath 本地创建项目临时目录
-     * @return 上传状态
-     */
-    @Nullable
-    private SingleResponse<String> commitProject(Skeleton skeleton, String workspacePath) {
-        //创建分支
-        String branch = String.format(automateBranchFormat, "initialize", "scaffold");
-        if (!repositoryGateway.createBranch(new CreateBranch(skeleton.getRepositoryId(), branch, MASTER))) {
-            return ResultUtils.fail("分支创建失败");
-        }
-        String projectPath = workspacePath + "/" + skeleton.getRepositoryName();
-        //读取上传文件信息
-        List<File> list = FileUtil.loopFiles(projectPath);
-        List<RepositoryFile> repositoryFiles = new ArrayList<>();
-        for (File file : list) {
-            String content = FileUtil.readString(file, StandardCharsets.UTF_8);
-            String path = file.getPath().substring(projectPath.length()).replaceAll("\\\\", "/");
-            repositoryFiles.add(new RepositoryFile(path, content));
-        }
-
-        //可能存在构建文件不存在
-        if (CollectionUtils.isNotEmpty(repositoryFiles)) {
-            CommitRepositoryFile commitRepositoryFile = new CommitRepositoryFile();
-            commitRepositoryFile.setRepositoryId(skeleton.getRepositoryId());
-            commitRepositoryFile.setCommitMessage("Initialize scaffold");
-            commitRepositoryFile.setBranchName(branch);
-            commitRepositoryFile.setFiles(repositoryFiles);
-            int commitCount = repositoryGateway.commitRepositoryFile(commitRepositoryFile);
-            if (commitCount == repositoryFiles.size()) {
-                return ResultUtils.of(branch);
-            }
-            return ResultUtils.fail(String.format("骨架代码提交数：%s,成功：%s", repositoryFiles.size(), commitCount));
-        }
-        return ResultUtils.of("模板无代码需要提交");
-    }
-
-    @NotNull
-    private String getWorkspacePath() {
-        if (!workspace.endsWith("/")) {
-            workspace = workspace + "/";
-        }
-        return workspace + IdUtils.simpleUUID() + "/";
     }
 }

@@ -78,7 +78,7 @@ public class WarehouseAddCmdExe implements CommandExecute<WarehouseAddCmd, Singl
         }
     }
 
-    private void initBranch(Long repositoryId) {
+    private void initBranch(String repositoryId) {
         //master 需要占位文件
         if (initRepo(repositoryId) != 1) {
             log.error("init master fail");
@@ -88,7 +88,7 @@ public class WarehouseAddCmdExe implements CommandExecute<WarehouseAddCmd, Singl
         repositoryGateway.createBranch(new CreateBranch(repositoryId, DEVELOP, MASTER));
     }
 
-    private Integer initRepo(Long repositoryId) {
+    private Integer initRepo(String repositoryId) {
         CommitRepositoryFile commitRepositoryFile = new CommitRepositoryFile();
         commitRepositoryFile.setRepositoryId(repositoryId);
         commitRepositoryFile.setCommitMessage("init");

@@ -14,7 +14,6 @@ import cn.meshed.cloud.utils.CopyUtils;
 import cn.meshed.cloud.utils.ResultUtils;
 import com.alibaba.cola.dto.Response;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -39,15 +38,15 @@ public class ProjectCmdExe implements CommandExecute<ProjectCmd, Response> {
     private String groupFormat;
 
     /**
+     * 仅新增项目处理器
+     *
      * @param projectCmd
      * @return
      */
     @Override
     public Response execute(ProjectCmd projectCmd) {
         Project project = CopyUtils.copy(projectCmd, Project.class);
-        if (StringUtils.isBlank(projectCmd.getUuid())) {
-            project.initProject();
-        }
+        project.initProject();
         RepositoryGroup repositoryGroup = buildGroup(projectCmd);
         project.setThirdId(repositoryGroup.getGroupId());
         project.setIdentity(repositoryGroup.getGroupName());
@@ -55,7 +54,7 @@ public class ProjectCmdExe implements CommandExecute<ProjectCmd, Response> {
         if (saveProject == null) {
             return ResultUtils.fail("发起立项失败");
         }
-        //发起更新事件
+        //发起初始化事件
         publishInitialize(projectCmd);
         return ResultUtils.ok();
     }

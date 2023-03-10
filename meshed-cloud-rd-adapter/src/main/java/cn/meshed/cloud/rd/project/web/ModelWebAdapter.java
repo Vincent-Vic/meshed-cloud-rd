@@ -11,6 +11,7 @@ import cn.meshed.cloud.rd.project.query.ModelPageQry;
 import com.alibaba.cola.dto.PageResponse;
 import com.alibaba.cola.dto.Response;
 import com.alibaba.cola.dto.SingleResponse;
+import io.swagger.annotations.ApiParam;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -36,7 +37,7 @@ public class ModelWebAdapter implements ModelAdapter {
      * @return {@link PageResponse<ModelDTO>}
      */
     @Override
-    public PageResponse<ModelDTO> list(String projectKey, @Valid ModelPageQry modelPageQry) {
+    public PageResponse<ModelDTO> list(@ApiParam("项目key") String projectKey, @Valid ModelPageQry modelPageQry) {
         modelPageQry.setProjectKey(projectKey);
         return modelAbility.list(modelPageQry);
     }

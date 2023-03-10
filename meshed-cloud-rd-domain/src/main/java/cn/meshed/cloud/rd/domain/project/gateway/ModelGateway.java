@@ -7,6 +7,8 @@ import cn.meshed.cloud.rd.domain.project.Model;
 import cn.meshed.cloud.rd.project.query.ModelPageQry;
 import com.alibaba.cola.dto.PageResponse;
 
+import java.util.Set;
+
 /**
  * <h1>模型网关</h1>
  *
@@ -23,4 +25,20 @@ public interface ModelGateway extends ISave<Model, String>, IQuery<String, Model
      * @return
      */
     boolean existClassName(String projectKey, String className);
+
+    /**
+     * 查询项目的待发布模型详情列表
+     *
+     * @param projectKey 项目key
+     * @return 详情列表
+     */
+    Set<Model> waitPublishListByProject(String projectKey);
+
+    /**
+     * 根据类名列表转换出包名列表
+     *
+     * @param classNames 类名
+     * @return 返回
+     */
+    Set<String> scanPackageNameByClassNames(Set<String> classNames);
 }

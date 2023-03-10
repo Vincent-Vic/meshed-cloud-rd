@@ -27,7 +27,7 @@ public class WarehouseInitializeSkeletonEventExeTest {
         WarehouseInitializeEvent event = new WarehouseInitializeEvent();
         event.setEngineTemplate("meshed-cloud-archetype");
         event.setBasePackage("cn.meshed.cloud.property");
-        event.setRepositoryId(3217159L);
+        event.setRepositoryId("3217159");
         event.setRepositoryName("meshed-cloud-property");
         event.setProjectKey("property");
         warehouseInitializeSkeletonEventExe.execute(event);

@@ -22,15 +22,11 @@ public enum GroupTypeEnum {
     /**
      * 请求
      */
-    REQUEST_PARAM(2, "request_param"),
-    /**
-     * 请求体
-     */
-    REQUEST_BODY(3, "request_body"),
+    REQUEST(2, "request"),
     /**
      * 返回
      */
-    RESPONSE(4, "response"),
+    RESPONSE(3, "response"),
     ;
 
     private final int value;

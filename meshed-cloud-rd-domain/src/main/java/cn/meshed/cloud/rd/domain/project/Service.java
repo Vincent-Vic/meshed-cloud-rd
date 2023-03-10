@@ -1,20 +1,20 @@
 package cn.meshed.cloud.rd.domain.project;
 
 import cn.hutool.core.util.StrUtil;
+import cn.meshed.cloud.context.SecurityContext;
 import cn.meshed.cloud.rd.project.enums.ReleaseStatusEnum;
+import cn.meshed.cloud.rd.project.enums.RequestModeEnum;
 import cn.meshed.cloud.rd.project.enums.RequestTypeEnum;
 import cn.meshed.cloud.rd.project.enums.ServiceAccessModeEnum;
-import cn.meshed.cloud.rd.project.enums.ServiceBehaviorEnum;
 import cn.meshed.cloud.rd.project.enums.ServiceModelStatusEnum;
 import cn.meshed.cloud.rd.project.enums.ServiceTypeEnum;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
-import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 import static cn.meshed.cloud.rd.domain.project.constant.ProjectConstant.INIT_VERSION;
-import static cn.meshed.cloud.rd.domain.project.constant.ProjectConstant.SERVICE_PACKAGE_NAME_FORMAT;
 
 /**
  * <h1>服务</h1>
@@ -23,7 +23,6 @@ import static cn.meshed.cloud.rd.domain.project.constant.ProjectConstant.SERVICE
  * @version 1.0
  */
 @Data
-@EqualsAndHashCode(callSuper = false)
 public class Service implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -52,11 +51,6 @@ public class Service implements Serializable {
      * 服务类名
      */
     private String className;
-
-    /**
-     * 模型包名
-     */
-    private String packageName;
 
     /**
      * 服务所属控制器类名简写
@@ -89,9 +83,9 @@ public class Service implements Serializable {
     private String identifier;
 
     /**
-     * 服务行为能力
+     * 服务请求参数模式
      */
-    private ServiceBehaviorEnum behavior;
+    private RequestModeEnum requestMode;
 
     /**
      * 服务访问权限
@@ -126,40 +120,37 @@ public class Service implements Serializable {
     /**
      * 请求参数传输列表
      */
-    private List<Field> requestParams;
+    private Set<Field> requests;
     /**
-     * 请求数据传输列表
+     * 响应字段列表
      */
-    private List<Field> requestBodys;
-    /**
-     * 相应字段列表
-     */
-    private List<Field> responses;
+    private Set<Field> responses;
 
-    public void initService(Project project) {
+    public void initService() {
         this.className = StrUtil.upperFirst(this.control) + this.type.getKey();
         this.releaseStatus = ReleaseStatusEnum.EDIT;
-        this.packageName = buildPackageName(project.getBasePackage());
         this.status = ServiceModelStatusEnum.DEV;
         this.version = INIT_VERSION;
+        this.ownerId = SecurityContext.getOperatorUserId();
         if (this.type == ServiceTypeEnum.RPC) {
             this.uri = this.className + "#" + this.method;
         }
     }
 
-    /**
-     * 包名生成
-     * 基础包名.领域名称.子包名.类名
-     * 基础包名：项目的基础包名
-     * 领域名称：项目内部的领域划分
-     * 子包名： 具体包名
-     * 类名：模型实体类名
-     *
-     * @param basePackage
-     * @return
-     */
-    private String buildPackageName(String basePackage) {
-        return String.format(SERVICE_PACKAGE_NAME_FORMAT, basePackage, domainKey, this.className).toLowerCase();
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Service)) {
+            return false;
+        }
+        Service service = (Service) o;
+        return getMethod().equals(service.getMethod()) && getClassName().equals(service.getClassName());
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(getMethod(), getClassName());
+    }
 }

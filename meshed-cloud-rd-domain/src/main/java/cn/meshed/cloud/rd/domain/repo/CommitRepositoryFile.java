@@ -17,7 +17,7 @@ public class CommitRepositoryFile {
     /**
      * 仓库ID
      */
-    private Long repositoryId;
+    private String repositoryId;
 
     /**
      * 提交分支

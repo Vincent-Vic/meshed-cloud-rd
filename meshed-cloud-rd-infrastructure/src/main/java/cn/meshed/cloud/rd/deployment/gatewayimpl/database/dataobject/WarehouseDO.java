@@ -37,7 +37,7 @@ public class WarehouseDO extends BaseEntity {
     /**
      * repositoryId
      */
-    private Long repoId;
+    private String repoId;
 
     /**
      * 中文名称

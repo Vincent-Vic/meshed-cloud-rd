@@ -2,9 +2,9 @@ package cn.meshed.cloud.rd.project.gatewayimpl.database.dataobject;
 
 import cn.meshed.cloud.entity.BaseEntity;
 import cn.meshed.cloud.rd.project.enums.ReleaseStatusEnum;
+import cn.meshed.cloud.rd.project.enums.RequestModeEnum;
 import cn.meshed.cloud.rd.project.enums.RequestTypeEnum;
 import cn.meshed.cloud.rd.project.enums.ServiceAccessModeEnum;
-import cn.meshed.cloud.rd.project.enums.ServiceBehaviorEnum;
 import cn.meshed.cloud.rd.project.enums.ServiceModelStatusEnum;
 import cn.meshed.cloud.rd.project.enums.ServiceTypeEnum;
 import com.baomidou.mybatisplus.annotation.IdType;
@@ -87,9 +87,9 @@ public class ServiceDO extends BaseEntity {
     private String identifier;
 
     /**
-     * 服务行为能力
+     * 服务请求参数模式
      */
-    private ServiceBehaviorEnum behavior;
+    private RequestModeEnum requestMode;
 
     /**
      * 服务级别 当前仅支持跟随项目性质（组件）

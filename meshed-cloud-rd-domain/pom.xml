@@ -43,5 +43,9 @@
             <groupId>cn.meshed.cloud</groupId>
             <artifactId>meshed-cloud-context-starter</artifactId>
         </dependency>
+        <dependency>
+            <groupId>cn.meshed.cloud.rd</groupId>
+            <artifactId>meshed-cloud-rd-codegen</artifactId>
+        </dependency>
     </dependencies>
 </project>

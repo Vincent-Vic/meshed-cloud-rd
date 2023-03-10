@@ -10,6 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * <h1>根据引擎模板查询原型</h1>
@@ -34,11 +35,9 @@ public class ArchetypeTemplateQry implements QueryExecute<String, Archetype> {
         AssertUtils.isTrue(StringUtils.isNotBlank(engineTemplate), "模板引擎名称不能为空");
         List<Archetype> engineTemplates = engineTemplateProperties.getEngineTemplates();
         if (CollectionUtils.isNotEmpty(engineTemplates)) {
-            for (Archetype archetype : engineTemplates) {
-                if (engineTemplate.toLowerCase().equals(archetype.getArchetypeArtifactId().toLowerCase())) {
-                    return archetype;
-                }
-            }
+            return engineTemplates.stream().filter(Objects::nonNull)
+                    .filter(archetype -> engineTemplate.equalsIgnoreCase(archetype.getArchetypeArtifactId()))
+                    .findFirst().orElse(null);
         }
         return null;
     }
