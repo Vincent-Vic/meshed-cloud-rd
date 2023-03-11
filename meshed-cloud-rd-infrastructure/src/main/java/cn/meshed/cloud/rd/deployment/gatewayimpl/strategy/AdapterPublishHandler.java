@@ -23,6 +23,7 @@ import org.springframework.stereotype.Component;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -107,6 +108,14 @@ public class AdapterPublishHandler extends AbstractServicePublish implements Pub
         adapter.setMethods(methods);
 
         //导包
+        //为登记到系统的类单独导包
+        if (CollectionUtils.isNotEmpty(newModels)) {
+            Set<String> newPackageNames = newModels.stream()
+                    .filter(Objects::nonNull).map(ObjectModel::getPackageName).collect(Collectors.toSet());
+            adapter.addImport(newPackageNames);
+        }
+
+        //方法参数导包
         for (AdapterMethod method : methods) {
             if (CollectionUtils.isEmpty(method.getParameters())) {
                 continue;
