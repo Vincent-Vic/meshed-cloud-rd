@@ -51,4 +51,9 @@ public interface DeploymentConstant {
      * 基本java数据类型
      */
     List<String> BASE_JAVA_TYPES = Arrays.asList("String", "Integer", "Long", "Float", "LocalDateTime", "LocalDate");
+
+    /**
+     * src 路径
+     */
+    String SRC_PATH = "src/main/java";
 }

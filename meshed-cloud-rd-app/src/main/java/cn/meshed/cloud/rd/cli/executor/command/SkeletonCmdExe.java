@@ -7,6 +7,7 @@ import cn.meshed.cloud.rd.domain.cli.Artifact;
 import cn.meshed.cloud.rd.domain.cli.BuildArchetype;
 import cn.meshed.cloud.rd.domain.cli.Skeleton;
 import cn.meshed.cloud.rd.domain.cli.gateway.CliGateway;
+import cn.meshed.cloud.rd.domain.repo.Branch;
 import cn.meshed.cloud.utils.ResultUtils;
 import com.alibaba.cola.dto.Response;
 import com.alibaba.cola.dto.SingleResponse;
@@ -14,6 +15,9 @@ import com.alibaba.cola.exception.SysException;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
+
+import static cn.meshed.cloud.rd.domain.repo.constant.RepoConstant.MASTER;
+import static cn.meshed.cloud.rd.domain.repo.constant.RepoConstant.WORKSPACE;
 
 
 /**
@@ -54,7 +58,7 @@ public class SkeletonCmdExe implements CommandExecute<Skeleton, SingleResponse<S
 
         try {
             String branch = cliGateway.archetypeWithPush(skeleton.getRepositoryId(),
-                    new BuildArchetype(archetype, artifact));
+                    new BuildArchetype(archetype, artifact, new Branch(WORKSPACE, MASTER)));
             if (StringUtils.isNotBlank(branch)) {
                 return ResultUtils.fail("原型不存在任何代码");
             }

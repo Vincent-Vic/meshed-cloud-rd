@@ -2,6 +2,7 @@ package cn.meshed.cloud.rd.domain.deployment.strategy.dto;
 
 import cn.meshed.cloud.rd.domain.deployment.strategy.PublishData;
 import cn.meshed.cloud.rd.domain.project.Service;
+import cn.meshed.cloud.rd.domain.repo.Branch;
 import lombok.Data;
 
 import java.util.Set;
@@ -31,7 +32,22 @@ public class ServicePublish implements PublishData {
     private String basePackage;
 
     /**
-     * 服务发现
+     * 服务列表
      */
     private Set<Service> services;
+
+    /**
+     * 生成路径
+     */
+    private String basePath;
+
+    /**
+     * 提交信息
+     */
+    private String commitMessage;
+
+    /**
+     * 提交分支信息
+     */
+    private Branch branch;
 }

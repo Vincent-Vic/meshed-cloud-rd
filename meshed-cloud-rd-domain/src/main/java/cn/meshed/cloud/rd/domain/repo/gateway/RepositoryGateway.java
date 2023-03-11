@@ -1,7 +1,7 @@
 package cn.meshed.cloud.rd.domain.repo.gateway;
 
+import cn.meshed.cloud.rd.domain.repo.Branch;
 import cn.meshed.cloud.rd.domain.repo.CommitRepositoryFile;
-import cn.meshed.cloud.rd.domain.repo.CreateBranch;
 import cn.meshed.cloud.rd.domain.repo.CreateRepository;
 import cn.meshed.cloud.rd.domain.repo.CreateRepositoryGroup;
 import cn.meshed.cloud.rd.domain.repo.ListRepositoryTree;
@@ -63,8 +63,28 @@ public interface RepositoryGateway {
     /**
      * 创建分支
      *
-     * @param createBranch 分支
+     * @param repositoryId 仓库ID
+     * @param branch       分支
      * @return 成功与否
      */
-    boolean createBranch(CreateBranch createBranch);
+    boolean createBranch(String repositoryId, Branch branch);
+
+    /**
+     * 重新构建分支
+     * 删除原来分支拉取新分支
+     *
+     * @param repositoryId 仓库ID
+     * @param branch       分支
+     * @return 成功与否
+     */
+    boolean rebuildBranch(String repositoryId, Branch branch);
+
+    /**
+     * 删除分支
+     *
+     * @param repositoryId 仓库ID
+     * @param branch       分支
+     * @return 成功与否
+     */
+    boolean deleteBranch(String repositoryId, String branch);
 }

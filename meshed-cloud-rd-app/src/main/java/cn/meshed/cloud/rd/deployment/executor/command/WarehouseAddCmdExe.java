@@ -7,8 +7,8 @@ import cn.meshed.cloud.rd.domain.deployment.Warehouse;
 import cn.meshed.cloud.rd.domain.deployment.gateway.WarehouseGateway;
 import cn.meshed.cloud.rd.domain.project.Project;
 import cn.meshed.cloud.rd.domain.project.gateway.ProjectGateway;
+import cn.meshed.cloud.rd.domain.repo.Branch;
 import cn.meshed.cloud.rd.domain.repo.CommitRepositoryFile;
-import cn.meshed.cloud.rd.domain.repo.CreateBranch;
 import cn.meshed.cloud.rd.domain.repo.CreateRepository;
 import cn.meshed.cloud.rd.domain.repo.Repository;
 import cn.meshed.cloud.rd.domain.repo.RepositoryFile;
@@ -84,8 +84,8 @@ public class WarehouseAddCmdExe implements CommandExecute<WarehouseAddCmd, Singl
             log.error("init master fail");
             return;
         }
-        repositoryGateway.createBranch(new CreateBranch(repositoryId, RELEASE, MASTER));
-        repositoryGateway.createBranch(new CreateBranch(repositoryId, DEVELOP, MASTER));
+        repositoryGateway.createBranch(repositoryId, new Branch(RELEASE, MASTER));
+        repositoryGateway.createBranch(repositoryId, new Branch(DEVELOP, MASTER));
     }
 
     private Integer initRepo(String repositoryId) {

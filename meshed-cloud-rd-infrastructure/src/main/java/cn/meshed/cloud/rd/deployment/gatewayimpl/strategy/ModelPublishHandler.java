@@ -71,7 +71,8 @@ public class ModelPublishHandler extends AbstractServicePublish implements Publi
         }
         //转换数据
         Set<ObjectModel> objectModels = models.stream().map(this::toObjectModel).collect(Collectors.toSet());
-        return generateModelWithPush(modelPublish.getRepositoryId(), objectModels);
+        return generateModelWithPush(modelPublish.getRepositoryId(), objectModels,
+                modelPublish.getBasePath(), modelPublish.getCommitMessage(), modelPublish.getBranch());
     }
 
     /**
@@ -83,7 +84,7 @@ public class ModelPublishHandler extends AbstractServicePublish implements Publi
     private ObjectModel toObjectModel(Model model) {
         ObjectModel objectModel = new ObjectModel();
         objectModel.setPackageName(model.getPackageName());
-        objectModel.setAuthor("Vincent Vic");
+        objectModel.setAuthor(getAuthor());
         objectModel.setDescription(model.getDescription());
         objectModel.setClassName(model.getClassName());
         objectModel.setSuperClass(model.getSuperClass());

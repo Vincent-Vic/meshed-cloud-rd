@@ -76,6 +76,27 @@ public class GenerateUtils {
      * @return
      */
     public static String buildModelPackageName(String basePackage, String domainKey, String subPackage, String className) {
-        return String.format(MODEL_PACKAGE_NAME_FORMAT, basePackage, domainKey, subPackage, className).toLowerCase();
+        return String.format(MODEL_PACKAGE_NAME_FORMAT, basePackage.toLowerCase(), domainKey.toLowerCase(), subPackage.toLowerCase(), className);
+    }
+
+    /**
+     * 包名转路径
+     *
+     * @param packageName 包名（含类名称）
+     * @return 路径
+     */
+    public static String packageToPath(String packageName) {
+        return StringUtils.isNotBlank(packageName) ? packageName.replaceAll("\\.", "/") + ".java" : "";
+    }
+
+    /**
+     * 包名转路径
+     *
+     * @param basePath    基础路径
+     * @param packageName 包名
+     * @return 路径
+     */
+    public static String packageToPath(String basePath, String packageName) {
+        return StringUtils.isNotBlank(basePath) ? basePath + "/" + packageToPath(packageName) : packageToPath(packageName);
     }
 }

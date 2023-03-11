@@ -1,7 +1,5 @@
 package cn.meshed.cloud.rd.domain.deployment.gateway;
 
-import cn.meshed.cloud.rd.domain.deployment.strategy.dto.ClientPublish;
-
 /**
  * <h1></h1>
  *
@@ -10,11 +8,4 @@ import cn.meshed.cloud.rd.domain.deployment.strategy.dto.ClientPublish;
  */
 public interface VersionGateway {
 
-    /**
-     * 发布客户端版本
-     *
-     * @param clientPublish 客户端版本
-     * @return
-     */
-    boolean publishClientVersion(ClientPublish clientPublish);
 }

@@ -9,8 +9,9 @@ import cn.meshed.cloud.rd.domain.cli.GenerateAdapter;
 import cn.meshed.cloud.rd.domain.cli.GenerateModel;
 import cn.meshed.cloud.rd.domain.cli.GenerateRpc;
 import cn.meshed.cloud.rd.domain.cli.gateway.CliGateway;
+import cn.meshed.cloud.rd.domain.cli.utils.GenerateUtils;
+import cn.meshed.cloud.rd.domain.repo.Branch;
 import cn.meshed.cloud.rd.domain.repo.CommitRepositoryFile;
-import cn.meshed.cloud.rd.domain.repo.CreateBranch;
 import cn.meshed.cloud.rd.domain.repo.RepositoryFile;
 import cn.meshed.cloud.rd.domain.repo.gateway.RepositoryGateway;
 import cn.meshed.cloud.utils.AssertUtils;
@@ -21,6 +22,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.cli.MavenCli;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -31,20 +33,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
-import static cn.meshed.cloud.rd.cli.gatewayimpl.MavenConstant.ARCHETYPE_ARTIFACT_ID;
-import static cn.meshed.cloud.rd.cli.gatewayimpl.MavenConstant.ARCHETYPE_GENERATE_ARG;
-import static cn.meshed.cloud.rd.cli.gatewayimpl.MavenConstant.ARCHETYPE_GROUP_ID;
-import static cn.meshed.cloud.rd.cli.gatewayimpl.MavenConstant.ARCHETYPE_VERSION;
-import static cn.meshed.cloud.rd.cli.gatewayimpl.MavenConstant.ARG_FORMAT;
-import static cn.meshed.cloud.rd.cli.gatewayimpl.MavenConstant.ARTIFACT_ID;
-import static cn.meshed.cloud.rd.cli.gatewayimpl.MavenConstant.BUILD_ARG;
-import static cn.meshed.cloud.rd.cli.gatewayimpl.MavenConstant.GROUP_ID;
-import static cn.meshed.cloud.rd.cli.gatewayimpl.MavenConstant.MULTI_MODULE_PROJECT_DIRECTORY;
-import static cn.meshed.cloud.rd.cli.gatewayimpl.MavenConstant.PACKAGE;
-import static cn.meshed.cloud.rd.cli.gatewayimpl.MavenConstant.SETTING_PARAM_FORMAT;
-import static cn.meshed.cloud.rd.cli.gatewayimpl.MavenConstant.VERSION;
-import static cn.meshed.cloud.rd.domain.repo.constant.RepoConstant.MASTER;
+import static cn.meshed.cloud.rd.domain.cli.constant.MavenConstant.ARCHETYPE_ARTIFACT_ID;
+import static cn.meshed.cloud.rd.domain.cli.constant.MavenConstant.ARCHETYPE_GENERATE_ARG;
+import static cn.meshed.cloud.rd.domain.cli.constant.MavenConstant.ARCHETYPE_GROUP_ID;
+import static cn.meshed.cloud.rd.domain.cli.constant.MavenConstant.ARCHETYPE_VERSION;
+import static cn.meshed.cloud.rd.domain.cli.constant.MavenConstant.ARG_FORMAT;
+import static cn.meshed.cloud.rd.domain.cli.constant.MavenConstant.ARTIFACT_ID;
+import static cn.meshed.cloud.rd.domain.cli.constant.MavenConstant.BUILD_ARG;
+import static cn.meshed.cloud.rd.domain.cli.constant.MavenConstant.GROUP_ID;
+import static cn.meshed.cloud.rd.domain.cli.constant.MavenConstant.MULTI_MODULE_PROJECT_DIRECTORY;
+import static cn.meshed.cloud.rd.domain.cli.constant.MavenConstant.PACKAGE;
+import static cn.meshed.cloud.rd.domain.cli.constant.MavenConstant.SETTING_PARAM_FORMAT;
+import static cn.meshed.cloud.rd.domain.cli.constant.MavenConstant.VERSION;
 import static cn.meshed.cloud.rd.domain.repo.constant.RepoConstant.WORKSPACE;
 
 /**
@@ -123,12 +125,11 @@ public class CliGatewayImpl implements CliGateway {
     @Override
     public String archetypeWithPush(String repositoryId, BuildArchetype buildArchetype) throws SysException {
 
+        AssertUtils.isTrue(buildArchetype.getBranch() != null, "分支信息不能为空");
         //构建原型
         String workspacePath = buildArchetype(buildArchetype);
 
         AssertUtils.isTrue(StringUtils.isNotBlank(workspacePath), "生成失败");
-        //已存在会失败，无视异常
-        repositoryGateway.createBranch(new CreateBranch(repositoryId, WORKSPACE, MASTER));
         String projectPath = workspacePath + "/" + buildArchetype.getArtifact().getArtifactId();
         //读取上传文件信息
         List<File> list = FileUtil.loopFiles(projectPath);
@@ -138,19 +139,30 @@ public class CliGatewayImpl implements CliGateway {
             String path = file.getPath().substring(projectPath.length()).replaceAll("\\\\", "/");
             repositoryFiles.add(new RepositoryFile(path, content));
         });
+        return commitFiles(repositoryId, repositoryFiles, "Initialize scaffold", buildArchetype.getBranch());
+    }
 
+    /**
+     * 批量提交文件到工作分支
+     *
+     * @param repositoryId    仓库ID
+     * @param repositoryFiles 文件列表
+     * @return
+     */
+    @Nullable
+    private String commitFiles(String repositoryId, List<RepositoryFile> repositoryFiles, String commitMessage, Branch branch) {
         //可能存在构建文件不存在
         if (CollectionUtils.isNotEmpty(repositoryFiles)) {
             CommitRepositoryFile commitRepositoryFile = new CommitRepositoryFile();
             commitRepositoryFile.setRepositoryId(repositoryId);
-            commitRepositoryFile.setCommitMessage("Initialize scaffold");
-            commitRepositoryFile.setBranchName(WORKSPACE);
+            commitRepositoryFile.setCommitMessage(commitMessage);
+            commitRepositoryFile.setBranchName(branch.getBranchName());
             commitRepositoryFile.setFiles(repositoryFiles);
             int commitCount = repositoryGateway.commitRepositoryFile(commitRepositoryFile);
             if (commitCount == repositoryFiles.size()) {
                 return WORKSPACE;
             }
-            throw new SysException(String.format("骨架代码提交数：%s,成功：%s", repositoryFiles.size(), commitCount));
+            throw new SysException(String.format("代码提交数：%s,成功：%s", repositoryFiles.size(), commitCount));
         }
         return null;
     }
@@ -166,14 +178,18 @@ public class CliGatewayImpl implements CliGateway {
     @Override
     public void asyncGenerateModelWithPush(String repositoryId, GenerateModel generateModel) {
         AssertUtils.isTrue(StringUtils.isNotBlank(repositoryId), "仓库ID不能为空");
-        AssertUtils.isTrue(generateModel != null
-                && CollectionUtils.isNotEmpty(generateModel.getModels()), "参数不能为空");
+        AssertUtils.isTrue(generateModel != null, "构建参数不能为空");
         assert generateModel != null;
-        generateModel.getModels().stream().filter(Objects::nonNull).forEach(model -> {
+        AssertUtils.isTrue(CollectionUtils.isNotEmpty(generateModel.getModels()), "构建模型不能为空");
+        AssertUtils.isTrue(generateModel.getBranch() != null, "构建分支不能为空");
+        //构建代码并转换数据
+        List<RepositoryFile> repositoryFiles = generateModel.getModels().stream().filter(Objects::nonNull).map(model -> {
             String code = generateClassExecute.buildModel(model);
-            System.out.println(code);
-        });
-
+            String path = GenerateUtils.packageToPath(generateModel.getBasePath(), model.getPackageName());
+            return new RepositoryFile(path, code);
+        }).collect(Collectors.toList());
+        //提交
+        commitFiles(repositoryId, repositoryFiles, generateModel.getCommitMessage(), generateModel.getBranch());
     }
 
     /**
@@ -186,13 +202,18 @@ public class CliGatewayImpl implements CliGateway {
     @Override
     public void asyncGenerateAdapterWithPush(String repositoryId, GenerateAdapter generateAdapter) {
         AssertUtils.isTrue(StringUtils.isNotBlank(repositoryId), "仓库ID不能为空");
-        AssertUtils.isTrue(generateAdapter != null
-                && CollectionUtils.isNotEmpty(generateAdapter.getAdapters()), "参数不能为空");
+        AssertUtils.isTrue(generateAdapter != null, "构建参数不能为空");
         assert generateAdapter != null;
-        generateAdapter.getAdapters().stream().filter(Objects::nonNull).forEach(adapter -> {
+        AssertUtils.isTrue(CollectionUtils.isNotEmpty(generateAdapter.getAdapters()), "构建适配器不能为空");
+        AssertUtils.isTrue(generateAdapter.getBranch() != null, "构建分支不能为空");
+        //构建代码并转换数据
+        List<RepositoryFile> repositoryFiles = generateAdapter.getAdapters().stream().filter(Objects::nonNull).map(adapter -> {
             String code = generateClassExecute.buildAdapter(adapter);
-            System.out.println(code);
-        });
+            String path = GenerateUtils.packageToPath(generateAdapter.getBasePath(), adapter.getPackageName());
+            return new RepositoryFile(path, code);
+        }).collect(Collectors.toList());
+        //提交
+        commitFiles(repositoryId, repositoryFiles, generateAdapter.getCommitMessage(), generateAdapter.getBranch());
     }
 
     /**
@@ -204,13 +225,18 @@ public class CliGatewayImpl implements CliGateway {
     @Override
     public void asyncGenerateRpcWithPush(String repositoryId, GenerateRpc generateRpc) {
         AssertUtils.isTrue(StringUtils.isNotBlank(repositoryId), "仓库ID不能为空");
-        AssertUtils.isTrue(generateRpc != null
-                && CollectionUtils.isNotEmpty(generateRpc.getRpcList()), "参数不能为空");
+        AssertUtils.isTrue(generateRpc != null, "构建参数不能为空");
         assert generateRpc != null;
-        generateRpc.getRpcList().stream().filter(Objects::nonNull).forEach(rpc -> {
+        AssertUtils.isTrue(CollectionUtils.isNotEmpty(generateRpc.getRpcList()), "构建RPC不能为空");
+        AssertUtils.isTrue(generateRpc.getBranch() != null, "构建分支不能为空");
+        //构建代码并转换数据
+        List<RepositoryFile> repositoryFiles = generateRpc.getRpcList().stream().filter(Objects::nonNull).map(rpc -> {
             String code = generateClassExecute.buildRpc(rpc);
-            System.out.println(code);
-        });
+            String path = GenerateUtils.packageToPath(generateRpc.getBasePath(), rpc.getPackageName());
+            return new RepositoryFile(path, code);
+        }).collect(Collectors.toList());
+        //提交
+        commitFiles(repositoryId, repositoryFiles, generateRpc.getCommitMessage(), generateRpc.getBranch());
     }
 
     /**

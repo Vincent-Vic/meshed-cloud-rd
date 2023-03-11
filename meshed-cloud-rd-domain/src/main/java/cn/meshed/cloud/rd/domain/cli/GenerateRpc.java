@@ -1,6 +1,7 @@
 package cn.meshed.cloud.rd.domain.cli;
 
 import cn.meshed.cloud.rd.codegen.Rpc;
+import cn.meshed.cloud.rd.domain.repo.Branch;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,4 +23,19 @@ public class GenerateRpc {
      * rpc列表
      */
     private Set<Rpc> rpcList;
+
+    /**
+     * 生成路径
+     */
+    private String basePath;
+
+    /**
+     * 提交信息
+     */
+    private String commitMessage;
+
+    /**
+     * 提交分支信息
+     */
+    private Branch branch;
 }

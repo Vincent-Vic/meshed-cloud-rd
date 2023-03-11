@@ -1,4 +1,4 @@
-package cn.meshed.cloud.rd.cli.gatewayimpl;
+package cn.meshed.cloud.rd.domain.cli.constant;
 
 /**
  * <h1></h1>

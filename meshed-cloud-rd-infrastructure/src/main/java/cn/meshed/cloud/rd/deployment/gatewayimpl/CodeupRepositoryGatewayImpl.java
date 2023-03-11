@@ -1,8 +1,8 @@
 package cn.meshed.cloud.rd.deployment.gatewayimpl;
 
 import cn.hutool.http.HttpStatus;
+import cn.meshed.cloud.rd.domain.repo.Branch;
 import cn.meshed.cloud.rd.domain.repo.CommitRepositoryFile;
-import cn.meshed.cloud.rd.domain.repo.CreateBranch;
 import cn.meshed.cloud.rd.domain.repo.CreateRepository;
 import cn.meshed.cloud.rd.domain.repo.CreateRepositoryGroup;
 import cn.meshed.cloud.rd.domain.repo.ListRepositoryTree;
@@ -26,6 +26,7 @@ import com.aliyun.devops20210625.models.CreateRepositoryGroupResponseBody;
 import com.aliyun.devops20210625.models.CreateRepositoryRequest;
 import com.aliyun.devops20210625.models.CreateRepositoryResponse;
 import com.aliyun.devops20210625.models.CreateRepositoryResponseBody;
+import com.aliyun.devops20210625.models.DeleteBranchRequest;
 import com.aliyun.devops20210625.models.GetRepositoryRequest;
 import com.aliyun.devops20210625.models.GetRepositoryResponse;
 import com.aliyun.devops20210625.models.GetRepositoryResponseBody;
@@ -45,6 +46,9 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static cn.meshed.cloud.rd.domain.repo.constant.RepoConstant.DEVELOP;
+import static cn.meshed.cloud.rd.domain.repo.constant.RepoConstant.MASTER;
 
 /**
  * <h1>存储库 - 云效实现 </h1>
@@ -214,6 +218,11 @@ public class CodeupRepositoryGatewayImpl implements RepositoryGateway {
      */
     @Override
     public Integer commitRepositoryFile(CommitRepositoryFile commitRepositoryFile) {
+        AssertUtils.isTrue(commitRepositoryFile != null, "请求参数不能为空");
+        assert commitRepositoryFile != null;
+        AssertUtils.isTrue(StringUtils.isNotBlank(commitRepositoryFile.getCommitMessage()), "提交信息不能为空");
+        AssertUtils.isTrue(StringUtils.isNotBlank(commitRepositoryFile.getBranchName()), "提交分支不能为空");
+        AssertUtils.isTrue(CollectionUtils.isNotEmpty(commitRepositoryFile.getFiles()), "提交文件不能为空");
         //查询文件树
         List<RepositoryTreeItem> repositoryTreeList = getRepositoryTreeItemList(commitRepositoryFile);
         //分类更新或修改
@@ -231,27 +240,70 @@ public class CodeupRepositoryGatewayImpl implements RepositoryGateway {
     /**
      * 创建分支
      *
-     * @param createBranch 分支
+     * @param branch 分支
      * @return 成功与否
      */
     @Override
-    public boolean createBranch(CreateBranch createBranch) {
+    public boolean createBranch(String repositoryId, Branch branch) {
         CreateBranchRequest createBranchRequest = new CreateBranchRequest();
         createBranchRequest.setOrganizationId(organizationId);
-        createBranchRequest.setRef(createBranch.getRef());
-        createBranchRequest.setBranchName(createBranch.getBranchName());
+        createBranchRequest.setRef(branch.getRef());
+        createBranchRequest.setBranchName(branch.getBranchName());
 
         try {
             CreateBranchResponse branchResponse = client
-                    .createBranch(createBranch.getRepositoryId(), createBranchRequest);
+                    .createBranch(repositoryId, createBranchRequest);
             if (branchResponse.getBody().getSuccess()) {
                 return true;
             }
-            log.error("{} create branch error : {}", createBranch.getBranchName(), branchResponse.getBody().getErrorMessage());
+            log.error("{} create branch error : {}", branch.getBranchName(), branchResponse.getBody().getErrorMessage());
         } catch (Exception e) {
-            log.error("{} create branch fail : {} ", createBranch.getBranchName(), e.getMessage());
+            log.error("{} create branch fail : {} ", branch.getBranchName(), e.getMessage());
         }
         return false;
+    }
+
+    /**
+     * 重新构建分支
+     * 删除原来分支拉取新分支
+     *
+     * @param repositoryId 仓库ID
+     * @param branch       分支
+     * @return 成功与否
+     */
+    @Override
+    public boolean rebuildBranch(String repositoryId, Branch branch) {
+        //删除已有的分支
+        deleteBranch(repositoryId, branch.getBranchName());
+        //构建新的分支
+        boolean isBuild = createBranch(repositoryId, branch);
+        if (!isBuild) {
+            log.error("{} rebuild branch fail", branch);
+        }
+        return false;
+    }
+
+    /**
+     * 删除分支
+     *
+     * @param repositoryId 仓库ID
+     * @param branch       分支
+     * @return 成功与否
+     */
+    @Override
+    public boolean deleteBranch(String repositoryId, String branch) {
+        AssertUtils.isTrue(!MASTER.equals(branch), "主分支不允许删除");
+        AssertUtils.isTrue(!DEVELOP.equals(branch), "开发分支不允许删除");
+        DeleteBranchRequest deleteBranchRequest = new DeleteBranchRequest();
+        deleteBranchRequest.setOrganizationId(organizationId);
+        deleteBranchRequest.setBranchName(branch);
+        try {
+            client.deleteBranch(repositoryId, deleteBranchRequest);
+        } catch (Exception e) {
+            log.error("{} delete branch fail : {} ", branch, e.getMessage());
+            return false;
+        }
+        return true;
     }
 
     /**

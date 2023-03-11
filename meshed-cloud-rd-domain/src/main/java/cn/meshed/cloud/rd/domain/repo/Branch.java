@@ -9,12 +9,7 @@ import lombok.Data;
  * @version 1.0
  */
 @Data
-public class CreateBranch {
-
-    /**
-     * 仓库ID
-     */
-    private String repositoryId;
+public class Branch {
 
     /**
      * 分支名称
@@ -26,8 +21,7 @@ public class CreateBranch {
      */
     private String ref;
 
-    public CreateBranch(String repositoryId, String branchName, String ref) {
-        this.repositoryId = repositoryId;
+    public Branch(String branchName, String ref) {
         this.branchName = branchName;
         this.ref = ref;
     }

@@ -13,6 +13,7 @@ import cn.meshed.cloud.rd.domain.cli.utils.GenerateUtils;
 import cn.meshed.cloud.rd.domain.project.Field;
 import cn.meshed.cloud.rd.domain.project.Service;
 import cn.meshed.cloud.rd.domain.project.gateway.ModelGateway;
+import cn.meshed.cloud.rd.domain.repo.Branch;
 import cn.meshed.cloud.rd.project.enums.BaseGenericsEnum;
 import cn.meshed.cloud.rd.project.enums.RequestModeEnum;
 import cn.meshed.cloud.rd.project.enums.ServiceTypeEnum;
@@ -54,13 +55,17 @@ public abstract class AbstractServicePublish {
     private final CliGateway cliGateway;
 
 
-    protected boolean generateModelWithPush(String repositoryId, Set<ObjectModel> objectModels) {
+    protected boolean generateModelWithPush(String repositoryId, Set<ObjectModel> objectModels,
+                                            String basePath, String commitMessage, Branch branch) {
         if (CollectionUtils.isEmpty(objectModels)) {
             return false;
         }
         //构建并且推送
         GenerateModel generateModel = new GenerateModel();
         generateModel.setModels(objectModels);
+        generateModel.setCommitMessage(commitMessage);
+        generateModel.setBasePath(basePath);
+        generateModel.setBranch(branch);
         cliGateway.asyncGenerateModelWithPush(repositoryId, generateModel);
         return true;
     }
@@ -136,6 +141,15 @@ public abstract class AbstractServicePublish {
 
         return newModels;
 
+    }
+
+    /**
+     * 获取作者
+     *
+     * @return
+     */
+    protected String getAuthor() {
+        return "Meshed Cloud 研发平台";
     }
 
     private void handleRequest(String basePackage, ObjectMethod method, Service service, Set<ObjectModel> newModels) {
@@ -257,7 +271,7 @@ public abstract class AbstractServicePublish {
         objectModel.setExplain(service.getName() + "参数");
         objectModel.setVersion(service.getVersion());
         objectModel.setSuperClass(DTO);
-        objectModel.setAuthor("Vincent Vic");
+        objectModel.setAuthor(getAuthor());
         objectModel.setClassName(className);
         objectModel.setPackageName(GenerateUtils
                 .buildModelPackageName(basePackage, service.getDomainKey(), subPackage, className));
