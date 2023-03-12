@@ -6,7 +6,6 @@ import cn.meshed.cloud.rd.project.enums.RequestModeEnum;
 import cn.meshed.cloud.rd.project.enums.RequestTypeEnum;
 import cn.meshed.cloud.rd.project.enums.ServiceAccessModeEnum;
 import cn.meshed.cloud.rd.project.enums.ServiceModelStatusEnum;
-import cn.meshed.cloud.rd.project.enums.ServiceTypeEnum;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -52,14 +51,9 @@ public class ServiceDO extends BaseEntity {
     private String uri;
 
     /**
-     * 服务类名
+     * 服务所属分组
      */
-    private String className;
-
-    /**
-     * 服务所属控制器类名简写
-     */
-    private String control;
+    private String groupId;
 
     /**
      * 服务版本号
@@ -72,12 +66,7 @@ public class ServiceDO extends BaseEntity {
     private Long ownerId;
 
     /**
-     * 服务所属领域key
-     */
-    private String domainKey;
-
-    /**
-     * 模型所属项目key
+     * 服务所属项目key
      */
     private String projectKey;
 
@@ -92,6 +81,11 @@ public class ServiceDO extends BaseEntity {
     private RequestModeEnum requestMode;
 
     /**
+     * 服务响应是否合并
+     */
+    private Boolean responseMerge;
+
+    /**
      * 服务级别 当前仅支持跟随项目性质（组件）
      */
     private ServiceAccessModeEnum accessMode;
@@ -100,11 +94,6 @@ public class ServiceDO extends BaseEntity {
      * 服务描述
      */
     private String description;
-
-    /**
-     * 服务类型
-     */
-    private ServiceTypeEnum type;
 
     /**
      * 服务状态

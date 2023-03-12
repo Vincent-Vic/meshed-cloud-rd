@@ -2,18 +2,27 @@ package cn.meshed.cloud.rd.domain.project;
 
 import cn.hutool.core.util.StrUtil;
 import cn.meshed.cloud.context.SecurityContext;
+import cn.meshed.cloud.rd.project.enums.BaseGenericsEnum;
+import cn.meshed.cloud.rd.project.enums.ModelAccessModeEnum;
+import cn.meshed.cloud.rd.project.enums.ModelTypeEnum;
 import cn.meshed.cloud.rd.project.enums.ReleaseStatusEnum;
 import cn.meshed.cloud.rd.project.enums.RequestModeEnum;
 import cn.meshed.cloud.rd.project.enums.RequestTypeEnum;
 import cn.meshed.cloud.rd.project.enums.ServiceAccessModeEnum;
 import cn.meshed.cloud.rd.project.enums.ServiceModelStatusEnum;
-import cn.meshed.cloud.rd.project.enums.ServiceTypeEnum;
+import cn.meshed.cloud.utils.AssertUtils;
 import lombok.Data;
+import org.apache.commons.collections4.CollectionUtils;
 
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import static cn.meshed.cloud.rd.domain.common.constant.Constant.DTO;
+import static cn.meshed.cloud.rd.domain.common.constant.Constant.PAGE_QUERY;
 import static cn.meshed.cloud.rd.domain.project.constant.ProjectConstant.INIT_VERSION;
 
 /**
@@ -33,6 +42,16 @@ public class Service implements Serializable {
     private String uuid;
 
     /**
+     * 服务分组ID
+     */
+    private String groupId;
+
+    /**
+     * 模型分组所属项目key
+     */
+    private String projectKey;
+
+    /**
      * 服务名称
      */
     private String name;
@@ -48,16 +67,6 @@ public class Service implements Serializable {
     private String uri;
 
     /**
-     * 服务类名
-     */
-    private String className;
-
-    /**
-     * 服务所属控制器类名简写
-     */
-    private String control;
-
-    /**
      * 服务版本号
      */
     private String version;
@@ -66,16 +75,6 @@ public class Service implements Serializable {
      * 服务负责人ID
      */
     private Long ownerId;
-
-    /**
-     * 服务所属领域key
-     */
-    private String domainKey;
-
-    /**
-     * 模型所属项目key
-     */
-    private String projectKey;
 
     /**
      * 服务授权码，用于注册身份安全
@@ -88,6 +87,11 @@ public class Service implements Serializable {
     private RequestModeEnum requestMode;
 
     /**
+     * 服务返回参数模式
+     */
+    private Boolean responseMerge;
+
+    /**
      * 服务访问权限
      */
     private ServiceAccessModeEnum accessMode;
@@ -96,11 +100,6 @@ public class Service implements Serializable {
      * 服务描述
      */
     private String description;
-
-    /**
-     * 服务类型
-     */
-    private ServiceTypeEnum type;
 
     /**
      * 服务状态
@@ -127,14 +126,118 @@ public class Service implements Serializable {
     private Set<Field> responses;
 
     public void initService() {
-        this.className = StrUtil.upperFirst(this.control) + this.type.getKey();
         this.releaseStatus = ReleaseStatusEnum.EDIT;
         this.status = ServiceModelStatusEnum.DEV;
         this.version = INIT_VERSION;
         this.ownerId = SecurityContext.getOperatorUserId();
-        if (this.type == ServiceTypeEnum.RPC) {
-            this.uri = this.className + "#" + this.method;
+    }
+
+    public Set<Model> handleFields(Set<Field> requests, Set<Field> responses) {
+        AssertUtils.isTrue(this.requestMode != null, "请求模式不能为空");
+        Set<Model> models = new HashSet<>();
+        Model requestModel = handleRequestFields(requests);
+        addModelSet(models, requestModel);
+        Model responseModel = handleResponseFields(responses);
+        addModelSet(models, responseModel);
+        return models;
+    }
+
+
+    private void addModelSet(Set<Model> models, Model model) {
+        if (model != null) {
+            models.add(model);
         }
+    }
+
+    /**
+     * 处理请求参数
+     *
+     * @param requests 外部传递请求参数列表
+     * @return 新增模型 or null
+     */
+    private Model handleRequestFields(Set<Field> requests) {
+        if (CollectionUtils.isEmpty(requests)) {
+            return null;
+        }
+        //参数策略: 不进行任何合并，支持多参数
+        if (RequestModeEnum.MULTIPLE == this.requestMode) {
+            this.requests = requests;
+            return null;
+        }
+        String name = this.name + "请求参数";
+        //其他模式均需要合并，路径参数依旧支持独立（合并中依旧包含路径参数）
+        Model model = buildBaseModel(requests, name);
+
+        if (RequestModeEnum.PAGE == this.requestMode) {
+            model.setType(ModelTypeEnum.PAGE_PARAM);
+            model.setSuperClass(PAGE_QUERY);
+        } else {
+            model.setType(ModelTypeEnum.PARAM);
+            model.setSuperClass(DTO);
+        }
+        model.initModel(this.method);
+
+        Set<Field> fields = requests.stream().filter(Objects::nonNull)
+                .filter(field -> field.getGeneric() == BaseGenericsEnum.PATH_VARIABLE).collect(Collectors.toSet());
+        //组装成字段
+        Field field = buildBaseField(name, model.getClassName());
+        //如果请求模式是JSON，字段同样设置成JSON，否则无泛型
+        if (RequestModeEnum.JSON == requestMode) {
+            field.setGeneric(BaseGenericsEnum.JSON);
+        } else {
+            field.setGeneric(BaseGenericsEnum.NONE);
+        }
+        //添加到
+        fields.add(field);
+        this.requests = fields;
+
+        return model;
+    }
+
+    private Field buildBaseField(String name, String className) {
+        Field field = new Field();
+        field.setExplain(name);
+        field.setFieldType(className);
+        field.setFieldName(StrUtil.lowerFirst(field.getFieldType()));
+        return field;
+    }
+
+    private Model handleResponseFields(Set<Field> responses) {
+
+        if (CollectionUtils.isEmpty(responses)) {
+            return null;
+        }
+        if (!this.responseMerge) {
+            //响应参数为单参数(不合并)且参数只有一个，如果存在多个需要友善提醒
+            AssertUtils.isTrue(responses.size() == 1, "无需合并的参数不能大于1个");
+        }
+
+        if (!this.responseMerge && responses.size() == 1) {
+            this.responses = responses;
+            return null;
+        }
+        String name = this.name + "返回参数";
+        //其他模式均需要合并，路径参数依旧支持独立（合并中依旧包含路径参数）
+        Model model = buildBaseModel(responses, name);
+        model.setType(ModelTypeEnum.VO);
+        model.setSuperClass(DTO);
+        model.initModel(this.method);
+        //组装成字段
+        Field field = buildBaseField(name, model.getClassName());
+        field.setGeneric(BaseGenericsEnum.NONE);
+        this.responses = Collections.singleton(field);
+        return model;
+    }
+
+
+    private Model buildBaseModel(Set<Field> fields, String modelName) {
+        Model model = new Model();
+        model.setFields(fields);
+        model.setName(modelName);
+        model.setDescription(modelName);
+        //非页面新增，也不需要出现在其他模型的选项中
+        model.setAccessMode(ModelAccessModeEnum.PRIVATE);
+        return model;
     }
 
     @Override
@@ -146,11 +249,11 @@ public class Service implements Serializable {
             return false;
         }
         Service service = (Service) o;
-        return getMethod().equals(service.getMethod()) && getClassName().equals(service.getClassName());
+        return getMethod().equals(service.getMethod()) && getGroupId().equals(service.getGroupId());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getMethod(), getClassName());
+        return Objects.hash(getMethod(), getGroupId());
     }
 }

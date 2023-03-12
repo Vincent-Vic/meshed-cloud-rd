@@ -1,7 +1,7 @@
 package cn.meshed.cloud.rd.project.gatewayimpl;
 
 import cn.meshed.cloud.rd.domain.project.Field;
-import cn.meshed.cloud.rd.domain.project.constant.GroupTypeEnum;
+import cn.meshed.cloud.rd.domain.project.constant.RelevanceTypeEnum;
 import cn.meshed.cloud.rd.domain.project.gateway.FieldGateway;
 import cn.meshed.cloud.rd.project.convertor.FieldConvertor;
 import cn.meshed.cloud.rd.project.gatewayimpl.database.dataobject.FieldDO;
@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 public class FieldGatewayImpl implements FieldGateway {
 
     private final FieldMapper fieldMapper;
-    private final List<GroupTypeEnum> SERVICE_GROUP = Arrays.asList(GroupTypeEnum.REQUEST, GroupTypeEnum.RESPONSE);
+    private final List<RelevanceTypeEnum> SERVICE_GROUP = Arrays.asList(RelevanceTypeEnum.REQUEST, RelevanceTypeEnum.RESPONSE);
 
     /**
      * 批量新增 （会删除字段中分组的字段）
@@ -42,13 +42,13 @@ public class FieldGatewayImpl implements FieldGateway {
      */
     @Transactional
     @Override
-    public Boolean saveBatch(GroupTypeEnum groupType, Set<Field> fields) {
+    public Boolean saveBatch(RelevanceTypeEnum groupType, Set<Field> fields) {
         //校验列表不能为空
         if (CollectionUtils.isEmpty(fields)) {
             return false;
         }
         //先删除原有的字段
-        Set<String> groupIds = fields.stream().map(Field::getGroupId).collect(Collectors.toSet());
+        Set<String> groupIds = fields.stream().map(Field::getRelevanceId).collect(Collectors.toSet());
         delByGroupId(groupIds, groupType);
         //新增字段
         List<FieldDO> fieldList = FieldConvertor.toEntityList(fields);
@@ -67,7 +67,7 @@ public class FieldGatewayImpl implements FieldGateway {
     public Set<Field> listByModel(String uuid) {
         AssertUtils.isTrue(StringUtils.isNotBlank(uuid), "模型ID不能为空");
         LambdaQueryWrapper<FieldDO> lqw = new LambdaQueryWrapper<>();
-        lqw.eq(FieldDO::getGroupType, GroupTypeEnum.MODEL).eq(FieldDO::getGroupId, uuid);
+        lqw.eq(FieldDO::getRelevanceType, RelevanceTypeEnum.MODEL).eq(FieldDO::getRelevanceId, uuid);
         return CopyUtils.copySetProperties(fieldMapper.selectList(lqw), Field::new);
     }
 
@@ -81,7 +81,7 @@ public class FieldGatewayImpl implements FieldGateway {
     public Set<Field> listByModels(Set<String> uuids) {
         AssertUtils.isTrue(CollectionUtils.isNotEmpty(uuids), "模型ID不能为空");
         LambdaQueryWrapper<FieldDO> lqw = new LambdaQueryWrapper<>();
-        lqw.eq(FieldDO::getGroupType, GroupTypeEnum.MODEL).in(FieldDO::getGroupId, uuids);
+        lqw.eq(FieldDO::getRelevanceType, RelevanceTypeEnum.MODEL).in(FieldDO::getRelevanceId, uuids);
         return CopyUtils.copySetProperties(fieldMapper.selectList(lqw), Field::new);
     }
 
@@ -96,7 +96,7 @@ public class FieldGatewayImpl implements FieldGateway {
         AssertUtils.isTrue(StringUtils.isNotBlank(uuid), "服务ID列表不能为空");
         LambdaQueryWrapper<FieldDO> lqw = new LambdaQueryWrapper<>();
         //字段目前仅含模型和服务两种大类型，为了查询方便做非运算，如新增需要修改此处业务，系分由上层业务实现
-        lqw.in(FieldDO::getGroupType, SERVICE_GROUP).eq(FieldDO::getGroupId, uuid);
+        lqw.in(FieldDO::getRelevanceType, SERVICE_GROUP).eq(FieldDO::getRelevanceId, uuid);
         return CopyUtils.copySetProperties(fieldMapper.selectList(lqw), Field::new);
     }
 
@@ -110,7 +110,7 @@ public class FieldGatewayImpl implements FieldGateway {
     public Set<Field> listByServices(Set<String> uuids) {
         AssertUtils.isTrue(CollectionUtils.isNotEmpty(uuids), "服务ID列表不能为空");
         LambdaQueryWrapper<FieldDO> lqw = new LambdaQueryWrapper<>();
-        lqw.in(FieldDO::getGroupType, SERVICE_GROUP).in(FieldDO::getGroupId, uuids);
+        lqw.in(FieldDO::getRelevanceType, SERVICE_GROUP).in(FieldDO::getRelevanceId, uuids);
         return CopyUtils.copySetProperties(fieldMapper.selectList(lqw), Field::new);
     }
 
@@ -120,12 +120,12 @@ public class FieldGatewayImpl implements FieldGateway {
      * @param groupIds 分组ID 列表
      * @return
      */
-    private boolean delByGroupId(Set<String> groupIds, GroupTypeEnum groupType) {
+    private boolean delByGroupId(Set<String> groupIds, RelevanceTypeEnum groupType) {
         if (CollectionUtils.isEmpty(groupIds)) {
             return false;
         }
         LambdaQueryWrapper<FieldDO> lqw = new LambdaQueryWrapper<>();
-        lqw.eq(FieldDO::getGroupType, groupType).in(FieldDO::getGroupId, groupIds);
+        lqw.eq(FieldDO::getRelevanceType, groupType).in(FieldDO::getRelevanceId, groupIds);
         return fieldMapper.delete(lqw) > 0;
     }
 

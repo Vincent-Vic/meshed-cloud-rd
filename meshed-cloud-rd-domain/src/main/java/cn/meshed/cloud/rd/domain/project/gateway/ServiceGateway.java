@@ -26,14 +26,14 @@ public interface ServiceGateway extends ISave<Service, String>, IQuery<String, S
      * @param method     方法名称
      * @return
      */
-    boolean existMethodName(String projectKey, String className, String method);
+    boolean existMethodName(String projectKey, String method);
 
     /**
      * 查询项目的待发布服务详情列表
      * 注：服务发布需要重建所属这个控制器全部方法，需要将同分组的服务方法一并查询出来
      *
-     * @param projectKey 项目key
-     * @return 详情列表
+     * @param uuids uuids
+     * @return 服务列表
      */
-    Set<Service> waitPublishListByProject(String projectKey);
+    Set<Service> listByUuids(Set<String> uuids);
 }

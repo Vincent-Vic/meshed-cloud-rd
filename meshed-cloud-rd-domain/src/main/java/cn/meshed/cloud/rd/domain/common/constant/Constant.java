@@ -1,4 +1,4 @@
-package cn.meshed.cloud.rd.domain.deployment.constant;
+package cn.meshed.cloud.rd.domain.common.constant;
 
 import java.util.Arrays;
 import java.util.List;
@@ -9,7 +9,7 @@ import java.util.List;
  * @author Vincent Vic
  * @version 1.0
  */
-public interface DeploymentConstant {
+public interface Constant {
 
     /**
      * Response

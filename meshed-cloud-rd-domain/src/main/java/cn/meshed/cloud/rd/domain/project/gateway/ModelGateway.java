@@ -1,5 +1,6 @@
 package cn.meshed.cloud.rd.domain.project.gateway;
 
+import cn.meshed.cloud.core.IBatchSave;
 import cn.meshed.cloud.core.IPageList;
 import cn.meshed.cloud.core.IQuery;
 import cn.meshed.cloud.core.ISave;
@@ -15,7 +16,9 @@ import java.util.Set;
  * @author Vincent Vic
  * @version 1.0
  */
-public interface ModelGateway extends ISave<Model, String>, IQuery<String, Model>, IPageList<ModelPageQry, PageResponse<Model>> {
+public interface ModelGateway extends ISave<Model, String>, IQuery<String, Model>,
+        IBatchSave<Set<Model>, Integer>,
+        IPageList<ModelPageQry, PageResponse<Model>> {
 
     /**
      * 判断className是否在模型中是否已经存在
@@ -41,4 +44,12 @@ public interface ModelGateway extends ISave<Model, String>, IQuery<String, Model
      * @return 返回
      */
     Set<String> scanPackageNameByClassNames(Set<String> classNames);
+
+    /**
+     * 根据类名列表转换出模型UUID列表
+     *
+     * @param classNames 类名
+     * @return 返回
+     */
+    Set<String> selectUuidListByClassNames(Set<String> classNames);
 }

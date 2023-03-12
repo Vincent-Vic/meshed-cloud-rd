@@ -46,7 +46,6 @@ public class ModelGatewayTest {
         model.setAccessMode(ModelAccessModeEnum.PROTECTED);
         model.setDomainKey("project");
         model.setDescription("project xxx");
-        model.setEnname("Project");
         model.setName("项目");
         model.setProjectKey("rd");
         model.setOwnerId(1L);
@@ -57,7 +56,7 @@ public class ModelGatewayTest {
         Project project = new Project();
         project.setAccessMode(ProjectAccessModeEnum.NONE);
         project.setBasePackage("cn.meshed.cloud.rd");
-        model.initModel(project);
+        model.initModel(project, "Project");
         return model;
     }
 

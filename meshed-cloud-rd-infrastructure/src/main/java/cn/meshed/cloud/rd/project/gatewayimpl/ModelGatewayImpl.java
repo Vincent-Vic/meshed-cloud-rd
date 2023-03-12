@@ -2,7 +2,7 @@ package cn.meshed.cloud.rd.project.gatewayimpl;
 
 import cn.meshed.cloud.rd.domain.project.Field;
 import cn.meshed.cloud.rd.domain.project.Model;
-import cn.meshed.cloud.rd.domain.project.constant.GroupTypeEnum;
+import cn.meshed.cloud.rd.domain.project.constant.RelevanceTypeEnum;
 import cn.meshed.cloud.rd.domain.project.gateway.FieldGateway;
 import cn.meshed.cloud.rd.domain.project.gateway.ModelGateway;
 import cn.meshed.cloud.rd.project.convertor.ModelConvertor;
@@ -77,7 +77,7 @@ public class ModelGatewayImpl implements ModelGateway {
         String uuid = modelDO.getUuid();
         Set<Field> fields = getFields(model, uuid);
         if (CollectionUtils.isNotEmpty(fields)) {
-            AssertUtils.isTrue(fieldGateway.saveBatch(GroupTypeEnum.MODEL, fields), "字段保存失败");
+            AssertUtils.isTrue(fieldGateway.saveBatch(RelevanceTypeEnum.MODEL, fields), "字段保存失败");
         }
 
         //返回uuid
@@ -90,8 +90,8 @@ public class ModelGatewayImpl implements ModelGateway {
             return Collections.emptySet();
         }
         return model.getFields().stream().peek(field -> {
-            field.setGroupId(uuid);
-            field.setGroupType(GroupTypeEnum.MODEL);
+            field.setRelevanceId(uuid);
+            field.setRelevanceType(RelevanceTypeEnum.MODEL);
         }).collect(Collectors.toSet());
     }
 
@@ -151,7 +151,7 @@ public class ModelGatewayImpl implements ModelGateway {
         AssertUtils.isTrue(StringUtils.isNotBlank(projectKey), "项目key不能为空");
         LambdaQueryWrapper<ModelDO> lqw = new LambdaQueryWrapper<>();
         //当项目key不存在时会判断这个系统的类名唯一值
-        lqw.eq(ModelDO::getProjectKey, projectKey);
+        lqw.eq(ModelDO::getProjectKey, projectKey.toUpperCase());
         lqw.eq(ModelDO::getReleaseStatus, ReleaseStatusEnum.PROCESSING);
         Set<Model> models = CopyUtils.copySetProperties(modelMapper.selectList(lqw), Model::new);
         if (CollectionUtils.isEmpty(models)) {
@@ -161,7 +161,7 @@ public class ModelGatewayImpl implements ModelGateway {
         Set<Field> fields = fieldGateway.listByModels(uuids);
         if (CollectionUtils.isNotEmpty(fields)) {
             Map<String, Set<Field>> fieldMap = fields.stream()
-                    .collect(Collectors.groupingBy(Field::getGroupId, Collectors.toSet()));
+                    .collect(Collectors.groupingBy(Field::getRelevanceId, Collectors.toSet()));
             models.forEach(model -> model.setFields(fieldMap.get(model.getUuid())));
         }
         return assembleModelDetailsList(models);
@@ -175,17 +175,44 @@ public class ModelGatewayImpl implements ModelGateway {
      */
     @Override
     public Set<String> scanPackageNameByClassNames(Set<String> classNames) {
-        AssertUtils.isTrue(CollectionUtils.isNotEmpty(classNames), "类名不能为空");
-        LambdaQueryWrapper<ModelDO> lqw = new LambdaQueryWrapper<>();
-        lqw.select(ModelDO::getPackageName)
-                .in(ModelDO::getClassName, classNames)
-                //编辑中的包无效
-                .ne(ModelDO::getReleaseStatus, ReleaseStatusEnum.EDIT);
-        List<ModelDO> list = modelMapper.selectList(lqw);
+        List<ModelDO> list = getModelSimpleListByClassNames(classNames);
         if (CollectionUtils.isEmpty(list)) {
             return Collections.emptySet();
         }
         return list.stream().map(ModelDO::getPackageName).collect(Collectors.toSet());
+    }
+
+    /**
+     * 根据包名列表获取模型简要信息
+     * 包名、UUID、类名、模型名称
+     *
+     * @param classNames
+     * @return
+     */
+    private List<ModelDO> getModelSimpleListByClassNames(Set<String> classNames) {
+        AssertUtils.isTrue(CollectionUtils.isNotEmpty(classNames), "类名不能为空");
+        LambdaQueryWrapper<ModelDO> lqw = new LambdaQueryWrapper<>();
+        lqw.select(ModelDO::getPackageName, ModelDO::getUuid, ModelDO::getClassName, ModelDO::getName)
+                .in(ModelDO::getClassName, classNames)
+                //编辑中的包无效
+                .ne(ModelDO::getReleaseStatus, ReleaseStatusEnum.EDIT);
+        List<ModelDO> list = modelMapper.selectList(lqw);
+        return list;
+    }
+
+    /**
+     * 根据类名列表转换出模型UUID列表
+     *
+     * @param classNames 类名
+     * @return 返回
+     */
+    @Override
+    public Set<String> selectUuidListByClassNames(Set<String> classNames) {
+        List<ModelDO> list = getModelSimpleListByClassNames(classNames);
+        if (CollectionUtils.isEmpty(list)) {
+            return Collections.emptySet();
+        }
+        return list.stream().map(ModelDO::getUuid).collect(Collectors.toSet());
     }
 
     /**
@@ -205,8 +232,22 @@ public class ModelGatewayImpl implements ModelGateway {
             return models;
         }
         //分类及封装
-        Map<String, Set<Field>> listMap = fields.stream().collect(Collectors.groupingBy(Field::getGroupId, Collectors.toSet()));
+        Map<String, Set<Field>> listMap = fields.stream().collect(Collectors.groupingBy(Field::getRelevanceId, Collectors.toSet()));
         return models.stream()
                 .peek(model -> model.setFields(listMap.get(model.getUuid()))).collect(Collectors.toSet());
+    }
+
+    /**
+     * <h1>批量保存对象</h1>
+     *
+     * @param models 模型列表
+     * @return 保存个数
+     */
+    @Override
+    public Integer saveBatch(Set<Model> models) {
+        if (CollectionUtils.isEmpty(models)) {
+            return -1;
+        }
+        return modelMapper.insertBatch(CopyUtils.copyListProperties(models, ModelDO::new));
     }
 }

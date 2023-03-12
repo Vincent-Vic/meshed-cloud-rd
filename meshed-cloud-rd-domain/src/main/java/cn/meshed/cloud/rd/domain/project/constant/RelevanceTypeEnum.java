@@ -5,7 +5,8 @@ import lombok.Getter;
 import lombok.ToString;
 
 /**
- * <h1></h1>
+ * <h1>字段关联类型</h1>
+ * 模型/参数/body/响应/方法参数/方法返回
  *
  * @author Vincent Vic
  * @version 1.0
@@ -13,7 +14,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @Getter
 @ToString
-public enum GroupTypeEnum {
+public enum RelevanceTypeEnum {
 
     /**
      * 模型
@@ -24,7 +25,7 @@ public enum GroupTypeEnum {
      */
     REQUEST(2, "request"),
     /**
-     * 返回
+     * 响应
      */
     RESPONSE(3, "response"),
     ;

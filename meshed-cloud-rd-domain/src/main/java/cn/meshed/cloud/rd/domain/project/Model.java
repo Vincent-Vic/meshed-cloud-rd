@@ -7,8 +7,10 @@ import cn.meshed.cloud.rd.project.enums.ModelTypeEnum;
 import cn.meshed.cloud.rd.project.enums.ProjectAccessModeEnum;
 import cn.meshed.cloud.rd.project.enums.ReleaseStatusEnum;
 import cn.meshed.cloud.rd.project.enums.ServiceModelStatusEnum;
+import lombok.AccessLevel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.Setter;
 
 import java.io.Serializable;
 import java.util.Set;
@@ -32,11 +34,6 @@ public class Model implements Serializable {
      * uuid
      */
     private String uuid;
-
-    /**
-     * 模型英文名
-     */
-    private String enname;
 
     /**
      * 模型名称
@@ -76,6 +73,7 @@ public class Model implements Serializable {
     /**
      * 模型所属项目key
      */
+    @Setter(AccessLevel.NONE)
     private String projectKey;
 
     /**
@@ -108,11 +106,18 @@ public class Model implements Serializable {
      */
     private Set<Field> fields;
 
+    public void setProjectKey(String projectKey) {
+        this.projectKey = projectKey.toUpperCase();
+    }
 
-    public void initModel(Project project) {
+    public void initModel(Project project, String enname) {
         this.accessMode = convertorAccessMode(project.getAccessMode());
-        this.className = StrUtil.upperFirst(this.enname) + this.type.getKey();
-        this.packageName = buildPackageName(project.getBasePackage());
+        buildPackageName(project.getBasePackage());
+        initModel(enname);
+    }
+
+    public void initModel(String enname) {
+        this.className = StrUtil.upperFirst(enname) + this.type.getKey();
         this.releaseStatus = ReleaseStatusEnum.EDIT;
         this.status = ServiceModelStatusEnum.DEV;
         this.version = INIT_VERSION;
@@ -130,16 +135,22 @@ public class Model implements Serializable {
      * @param basePackage
      * @return
      */
-    private String buildPackageName(String basePackage) {
-        String sunPackageName = this.type.name().toLowerCase();
-        return String.format(MODEL_PACKAGE_NAME_FORMAT, basePackage, domainKey, sunPackageName, this.className);
+    public void buildPackageName(String basePackage) {
+        String sunPackageName = "";
+        if (ModelTypeEnum.PAGE_PARAM == this.type) {
+            sunPackageName = ModelTypeEnum.PARAM.name().toLowerCase();
+        } else {
+            sunPackageName = this.type.name().toLowerCase();
+        }
+
+        this.packageName = String.format(MODEL_PACKAGE_NAME_FORMAT, basePackage, domainKey, sunPackageName, this.className);
     }
 
     /**
      * 转换访问权限
      * 当前进支持公共库的组件公开使用
      *
-     * @param accessMode
+     * @param accessMode 授权模式
      * @return
      */
     private ModelAccessModeEnum convertorAccessMode(ProjectAccessModeEnum accessMode) {

@@ -1,6 +1,6 @@
 package cn.meshed.cloud.rd.project.gatewayimpl.database.dataobject;
 
-import cn.meshed.cloud.rd.domain.project.constant.GroupTypeEnum;
+import cn.meshed.cloud.rd.domain.project.constant.RelevanceTypeEnum;
 import cn.meshed.cloud.rd.project.enums.BaseGenericsEnum;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -69,14 +69,14 @@ public class FieldDO implements Serializable {
     private String rule;
 
     /**
-     * 分组ID（模型/服务的ID）
+     * 字段关联ID（模型/服务的ID）
      */
-    private String groupId;
+    private String relevanceId;
 
     /**
-     * 分组类型
+     * 字段关联类型 模型/参数/body/返回/方法参数/方法返回
      */
-    private GroupTypeEnum groupType;
+    private RelevanceTypeEnum relevanceType;
 
 
 }

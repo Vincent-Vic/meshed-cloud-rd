@@ -1,7 +1,7 @@
 package cn.meshed.cloud.rd.domain.project.gateway;
 
 import cn.meshed.cloud.rd.domain.project.Field;
-import cn.meshed.cloud.rd.domain.project.constant.GroupTypeEnum;
+import cn.meshed.cloud.rd.domain.project.constant.RelevanceTypeEnum;
 
 import java.util.Set;
 
@@ -20,7 +20,7 @@ public interface FieldGateway {
      * @param fields    字段列表
      * @return
      */
-    Boolean saveBatch(GroupTypeEnum groupType, Set<Field> fields);
+    Boolean saveBatch(RelevanceTypeEnum groupType, Set<Field> fields);
 
     /**
      * 查询模型字段

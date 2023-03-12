@@ -2,6 +2,7 @@ package cn.meshed.cloud.rd.deployment.gatewayimpl.strategy;
 
 import cn.meshed.cloud.rd.codegen.ObjectField;
 import cn.meshed.cloud.rd.codegen.ObjectModel;
+import cn.meshed.cloud.rd.domain.cli.GenerateModel;
 import cn.meshed.cloud.rd.domain.cli.gateway.CliGateway;
 import cn.meshed.cloud.rd.domain.deployment.strategy.AbstractServicePublish;
 import cn.meshed.cloud.rd.domain.deployment.strategy.PublishHandler;
@@ -9,6 +10,7 @@ import cn.meshed.cloud.rd.domain.deployment.strategy.PublishType;
 import cn.meshed.cloud.rd.domain.deployment.strategy.dto.ModelPublish;
 import cn.meshed.cloud.rd.domain.project.Model;
 import cn.meshed.cloud.rd.domain.project.gateway.ModelGateway;
+import cn.meshed.cloud.rd.domain.repo.Branch;
 import cn.meshed.cloud.utils.AssertUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -73,6 +75,21 @@ public class ModelPublishHandler extends AbstractServicePublish implements Publi
         Set<ObjectModel> objectModels = models.stream().map(this::toObjectModel).collect(Collectors.toSet());
         return generateModelWithPush(modelPublish.getRepositoryId(), objectModels,
                 modelPublish.getBasePath(), modelPublish.getCommitMessage(), modelPublish.getBranch());
+    }
+
+    private boolean generateModelWithPush(String repositoryId, Set<ObjectModel> objectModels,
+                                          String basePath, String commitMessage, Branch branch) {
+        if (CollectionUtils.isEmpty(objectModels)) {
+            return false;
+        }
+        //构建并且推送
+        GenerateModel generateModel = new GenerateModel();
+        generateModel.setModels(objectModels);
+        generateModel.setCommitMessage(commitMessage);
+        generateModel.setBasePath(basePath);
+        generateModel.setBranch(branch);
+        getCliGateway().asyncGenerateModelWithPush(repositoryId, generateModel);
+        return true;
     }
 
     /**

@@ -7,7 +7,6 @@ import cn.meshed.cloud.rd.project.data.ResponsesFieldDTO;
 import cn.meshed.cloud.rd.project.enums.RequestModeEnum;
 import cn.meshed.cloud.rd.project.enums.RequestTypeEnum;
 import cn.meshed.cloud.rd.project.enums.ServiceAccessModeEnum;
-import cn.meshed.cloud.rd.project.enums.ServiceTypeEnum;
 import cn.meshed.cloud.rd.project.executor.command.ServiceCmdExe;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
@@ -40,16 +39,17 @@ public class ServiceCmdExeTest {
     @NotNull
     private ServiceCmd buildMockServiceCmd() {
         ServiceCmd serviceCmd = new ServiceCmd();
-        serviceCmd.setDomain("property");
+        serviceCmd.setGroupId("11d9d8d8cc37ec7dfaa2116ec59aca29");
         serviceCmd.setDescription("project xxx");
         serviceCmd.setName("资产服务列表");
-        serviceCmd.setControl("Property");
-        serviceCmd.setMethod("edit");
-        serviceCmd.setUri("/edit");
+        serviceCmd.setMethod("delete");
+        serviceCmd.setUri("/delete");
         serviceCmd.setIdentifier("xxx");
         serviceCmd.setAccessMode(ServiceAccessModeEnum.ANONYMOUS);
-        serviceCmd.setRequestMode(RequestModeEnum.FORM);
+        serviceCmd.setRequestMode(RequestModeEnum.JSON);
         serviceCmd.setRequestType(RequestTypeEnum.GET);
+        serviceCmd.setResponseMerge(true);
+        //请求参数
         RequestFieldDTO requestFieldDTO = new RequestFieldDTO();
         requestFieldDTO.setExplain("资产名称");
         requestFieldDTO.setFieldName("requestName");
@@ -61,15 +61,13 @@ public class ServiceCmdExeTest {
         requestFieldDTO2.setFieldType("String");
         requestFieldDTO2.setNonNull(true);
         serviceCmd.setRequests(Arrays.asList(requestFieldDTO, requestFieldDTO2));
+        //响应参数
         ResponsesFieldDTO responsesFieldDTO = new ResponsesFieldDTO();
         responsesFieldDTO.setExplain("资产名称");
         responsesFieldDTO.setFieldName("responseName");
         responsesFieldDTO.setFieldType("String");
         serviceCmd.setResponses(Collections.singletonList(responsesFieldDTO));
         serviceCmd.setName("项目");
-        serviceCmd.setProjectKey("PROPERTY");
-        serviceCmd.setType(ServiceTypeEnum.API);
-//        serviceCmd.setIdentifier("DTO");
         return serviceCmd;
     }
 }

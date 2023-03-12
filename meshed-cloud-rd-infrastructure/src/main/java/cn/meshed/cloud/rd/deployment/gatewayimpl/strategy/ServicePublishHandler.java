@@ -4,8 +4,8 @@ import cn.meshed.cloud.rd.domain.deployment.strategy.AsyncPublishStrategy;
 import cn.meshed.cloud.rd.domain.deployment.strategy.PublishHandler;
 import cn.meshed.cloud.rd.domain.deployment.strategy.PublishType;
 import cn.meshed.cloud.rd.domain.deployment.strategy.dto.ServicePublish;
-import cn.meshed.cloud.rd.domain.project.Service;
-import cn.meshed.cloud.rd.domain.project.gateway.ServiceGateway;
+import cn.meshed.cloud.rd.domain.project.ServiceGroup;
+import cn.meshed.cloud.rd.domain.project.gateway.ServiceGroupGateway;
 import cn.meshed.cloud.rd.project.enums.ServiceTypeEnum;
 import cn.meshed.cloud.utils.AssertUtils;
 import cn.meshed.cloud.utils.CopyUtils;
@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 @Component
 public class ServicePublishHandler implements PublishHandler<ServicePublish> {
 
-    private final ServiceGateway serviceGateway;
+    private final ServiceGroupGateway serviceGroupGateway;
     private final AsyncPublishStrategy asyncPublishStrategy;
 
     /**
@@ -52,17 +52,17 @@ public class ServicePublishHandler implements PublishHandler<ServicePublish> {
     public void publish(ServicePublish servicePublish) {
         String projectKey = servicePublish.getProjectKey();
         AssertUtils.isTrue(StringUtils.isNotBlank(projectKey), "项目key不允许为空");
-        Set<Service> services = serviceGateway.waitPublishListByProject(projectKey);
-        if (CollectionUtils.isEmpty(services)) {
+        Set<ServiceGroup> serviceGroups = serviceGroupGateway.waitPublishListByProject(projectKey);
+        if (CollectionUtils.isEmpty(serviceGroups)) {
             return;
         }
         //服务分类适配器和rpc等
-        Map<ServiceTypeEnum, Set<Service>> serviceTypeMap = services.stream()
-                .collect(Collectors.groupingBy(Service::getType, Collectors.toSet()));
+        Map<ServiceTypeEnum, Set<ServiceGroup>> serviceTypeMap = serviceGroups.stream()
+                .collect(Collectors.groupingBy(ServiceGroup::getType, Collectors.toSet()));
         serviceTypeMap.forEach((key, value) -> {
             if (CollectionUtils.isNotEmpty(value)) {
                 ServicePublish publish = CopyUtils.copy(servicePublish, ServicePublish.class);
-                publish.setServices(value);
+                publish.setServiceGroups(value);
                 PublishType publishType = convertPublishType(key);
                 if (publishType != null) {
                     asyncPublishStrategy.asyncPublish(publishType, publish);

@@ -1,11 +1,12 @@
 package cn.meshed.cloud.rd.domain.project;
 
-import cn.meshed.cloud.rd.domain.project.constant.GroupTypeEnum;
+import cn.meshed.cloud.rd.domain.project.constant.RelevanceTypeEnum;
 import cn.meshed.cloud.rd.project.enums.BaseGenericsEnum;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * <p>
@@ -62,13 +63,29 @@ public class Field implements Serializable {
     private String rule;
 
     /**
-     * 分组ID（模型/服务的ID）
+     * 关系ID（模型/服务的ID）
      */
-    private String groupId;
+    private String relevanceId;
 
     /**
-     * 分组类型
+     * 关系类型
      */
-    private GroupTypeEnum groupType;
+    private RelevanceTypeEnum relevanceType;
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Field)) {
+            return false;
+        }
+        Field field = (Field) o;
+        return getFieldName().equals(field.getFieldName());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getFieldName());
+    }
 }

@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
-import static cn.meshed.cloud.rd.domain.deployment.constant.DeploymentConstant.SRC_PATH;
+import static cn.meshed.cloud.rd.domain.common.constant.Constant.SRC_PATH;
 
 /**
  * <h1></h1>

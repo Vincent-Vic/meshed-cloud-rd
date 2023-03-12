@@ -60,7 +60,7 @@ public class ModelCmdExe implements CommandExecute<ModelCmd, Response> {
                 return ResultUtils.fail("领域未新增");
             }
             assert project != null;
-            model.initModel(project);
+            model.initModel(project, modelCmd.getEnname());
         }
         List<RequestFieldDTO> fields = modelCmd.getFields();
         if (CollectionUtils.isNotEmpty(fields)) {

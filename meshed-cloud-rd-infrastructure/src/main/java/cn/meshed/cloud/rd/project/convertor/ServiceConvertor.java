@@ -16,6 +16,7 @@ import java.io.Serializable;
 public class ServiceConvertor implements Serializable {
 
     public static ServiceDO toEntity(Service service, ServiceDO serviceDO) {
+
         if (serviceDO == null) {
             return CopyUtils.copy(service, ServiceDO.class);
         }

@@ -34,11 +34,6 @@ public class ModelDO extends BaseEntity {
     private String uuid;
 
     /**
-     * 模型英文名
-     */
-    private String enname;
-
-    /**
      * 模型名称
      */
     @TableField("`name`")

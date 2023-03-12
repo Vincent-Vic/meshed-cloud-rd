@@ -1,7 +1,7 @@
 package cn.meshed.cloud.rd.domain.deployment.strategy.dto;
 
 import cn.meshed.cloud.rd.domain.deployment.strategy.PublishData;
-import cn.meshed.cloud.rd.domain.project.Service;
+import cn.meshed.cloud.rd.domain.project.ServiceGroup;
 import cn.meshed.cloud.rd.domain.repo.Branch;
 import lombok.Data;
 
@@ -34,7 +34,7 @@ public class ServicePublish implements PublishData {
     /**
      * 服务列表
      */
-    private Set<Service> services;
+    private Set<ServiceGroup> serviceGroups;
 
     /**
      * 生成路径

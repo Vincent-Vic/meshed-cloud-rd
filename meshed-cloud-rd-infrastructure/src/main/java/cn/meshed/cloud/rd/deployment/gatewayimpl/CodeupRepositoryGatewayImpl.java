@@ -317,6 +317,8 @@ public class CodeupRepositoryGatewayImpl implements RepositoryGateway {
         if (CollectionUtils.isNotEmpty(oldFiles)) {
             int success = 0;
             for (RepositoryFile file : oldFiles) {
+                log.debug("更新文件：{}", file.getFilePath());
+                System.out.println(file.getContent());
                 UpdateFileRequest updateFileRequest = new UpdateFileRequest();
                 updateFileRequest.setOrganizationId(organizationId);
                 updateFileRequest.setBranchName(commitRepositoryFile.getBranchName());
@@ -354,6 +356,8 @@ public class CodeupRepositoryGatewayImpl implements RepositoryGateway {
         if (CollectionUtils.isNotEmpty(newFiles)) {
             int success = 0;
             for (RepositoryFile file : newFiles) {
+                log.debug("新建文件：{}", file.getFilePath());
+                System.out.println(file.getContent());
                 CreateFileRequest createFileRequest = new CreateFileRequest();
                 createFileRequest.setOrganizationId(organizationId);
                 createFileRequest.setFilePath(file.getFilePath());
