@@ -82,7 +82,8 @@ public class FieldGatewayImpl implements FieldGateway {
         AssertUtils.isTrue(CollectionUtils.isNotEmpty(uuids), "模型ID不能为空");
         LambdaQueryWrapper<FieldDO> lqw = new LambdaQueryWrapper<>();
         lqw.eq(FieldDO::getRelevanceType, RelevanceTypeEnum.MODEL).in(FieldDO::getRelevanceId, uuids);
-        return CopyUtils.copySetProperties(fieldMapper.selectList(lqw), Field::new);
+        List<FieldDO> fields = fieldMapper.selectList(lqw);
+        return CopyUtils.copySetProperties(fields, Field::new);
     }
 
     /**
@@ -120,7 +121,7 @@ public class FieldGatewayImpl implements FieldGateway {
      * @param groupIds 分组ID 列表
      * @return
      */
-    private boolean delByGroupId(Set<String> groupIds, RelevanceTypeEnum groupType) {
+    public boolean delByGroupId(Set<String> groupIds, RelevanceTypeEnum groupType) {
         if (CollectionUtils.isEmpty(groupIds)) {
             return false;
         }

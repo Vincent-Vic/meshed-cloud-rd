@@ -23,6 +23,15 @@ public interface FieldGateway {
     Boolean saveBatch(RelevanceTypeEnum groupType, Set<Field> fields);
 
     /**
+     * 根据分组ID删除字段
+     *
+     * @param groupIds  分组ID
+     * @param groupType 分组类型
+     * @return 成功与否
+     */
+    boolean delByGroupId(Set<String> groupIds, RelevanceTypeEnum groupType);
+
+    /**
      * 查询模型字段
      *
      * @param uuid 分组ID

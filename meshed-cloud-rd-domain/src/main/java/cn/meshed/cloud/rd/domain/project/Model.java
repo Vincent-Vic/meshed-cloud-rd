@@ -13,6 +13,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Setter;
 
 import java.io.Serializable;
+import java.util.Objects;
 import java.util.Set;
 
 import static cn.meshed.cloud.rd.domain.project.constant.ProjectConstant.INIT_VERSION;
@@ -110,14 +111,14 @@ public class Model implements Serializable {
         this.projectKey = projectKey.toUpperCase();
     }
 
-    public void initModel(Project project, String enname) {
+    public void initModel(Project project, String classNamePrefix) {
         this.accessMode = convertorAccessMode(project.getAccessMode());
+        initModel(classNamePrefix);
         buildPackageName(project.getBasePackage());
-        initModel(enname);
     }
 
-    public void initModel(String enname) {
-        this.className = StrUtil.upperFirst(enname) + this.type.getKey();
+    public void initModel(String classNamePrefix) {
+        this.className = StrUtil.upperFirst(classNamePrefix) + this.type.getKey();
         this.releaseStatus = ReleaseStatusEnum.EDIT;
         this.status = ServiceModelStatusEnum.DEV;
         this.version = INIT_VERSION;
@@ -136,9 +137,12 @@ public class Model implements Serializable {
      * @return
      */
     public void buildPackageName(String basePackage) {
-        String sunPackageName = "";
+        String sunPackageName = null;
         if (ModelTypeEnum.PAGE_PARAM == this.type) {
             sunPackageName = ModelTypeEnum.PARAM.name().toLowerCase();
+        }
+        if (ModelTypeEnum.PAGE_REQUEST == this.type) {
+            sunPackageName = ModelTypeEnum.REQUEST.name().toLowerCase();
         } else {
             sunPackageName = this.type.name().toLowerCase();
         }
@@ -160,4 +164,20 @@ public class Model implements Serializable {
         return ModelAccessModeEnum.PROTECTED;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Model)) {
+            return false;
+        }
+        Model model = (Model) o;
+        return getClassName().equals(model.getClassName()) && getPackageName().equals(model.getPackageName());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getClassName(), getPackageName());
+    }
 }

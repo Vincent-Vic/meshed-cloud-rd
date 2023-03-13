@@ -52,4 +52,14 @@ public interface ModelGateway extends ISave<Model, String>, IQuery<String, Model
      * @return 返回
      */
     Set<String> selectUuidListByClassNames(Set<String> classNames);
+
+    /**
+     * 批量保存模型（含字段）或仅更新字段
+     *
+     * @param projectKey 项目唯一标识
+     * @param models     模型
+     * @return 成功与否
+     */
+    boolean batchSaveOrOnlyUpdateField(String projectKey, Set<Model> models);
+
 }

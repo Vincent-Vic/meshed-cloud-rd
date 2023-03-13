@@ -81,11 +81,12 @@ public class Field implements Serializable {
             return false;
         }
         Field field = (Field) o;
-        return getFieldName().equals(field.getFieldName());
+        return getFieldName().equals(field.getFieldName()) && getRelevanceId().equals(field.getRelevanceId())
+                && getRelevanceType() == field.getRelevanceType();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getFieldName());
+        return Objects.hash(getFieldName(), getRelevanceId(), getRelevanceType());
     }
 }

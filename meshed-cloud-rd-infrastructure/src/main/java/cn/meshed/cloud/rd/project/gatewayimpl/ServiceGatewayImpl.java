@@ -8,6 +8,7 @@ import cn.meshed.cloud.rd.domain.project.gateway.ModelGateway;
 import cn.meshed.cloud.rd.domain.project.gateway.ServiceGateway;
 import cn.meshed.cloud.rd.project.convertor.ServiceConvertor;
 import cn.meshed.cloud.rd.project.enums.RequestModeEnum;
+import cn.meshed.cloud.rd.project.enums.ServiceTypeEnum;
 import cn.meshed.cloud.rd.project.gatewayimpl.database.dataobject.ServiceDO;
 import cn.meshed.cloud.rd.project.gatewayimpl.database.mapper.ServiceMapper;
 import cn.meshed.cloud.rd.project.query.ServicePageQry;
@@ -127,7 +128,11 @@ public class ServiceGatewayImpl implements ServiceGateway {
         if (service == null) {
             return null;
         }
-        AssertUtils.isTrue(!existMethodName(service.getGroupId(), service.getMethod()), "生成类名重复");
+        AssertUtils.isTrue(!existMethodName(service.getGroupId(), service.getMethod()), "方法名称重复");
+        if (ServiceTypeEnum.API == service.getType()) {
+            AssertUtils.isTrue(!existUri(service.getGroupId(), service.getUri()), "URI重复");
+        }
+
         ServiceDO serviceDO = ServiceConvertor.toEntity(service, queryByUuid(service.getUuid()));
         //保存服务
         if (StringUtils.isEmpty(serviceDO.getUuid())) {
@@ -182,11 +187,29 @@ public class ServiceGatewayImpl implements ServiceGateway {
      */
     @Override
     public boolean existMethodName(String groupId, String method) {
-        AssertUtils.isTrue(StringUtils.isNotBlank(groupId), "项目key不能为空");
+        AssertUtils.isTrue(StringUtils.isNotBlank(groupId), "分组ID不能为空");
         AssertUtils.isTrue(StringUtils.isNotBlank(method), "方法名称不能为空");
         LambdaQueryWrapper<ServiceDO> lqw = new LambdaQueryWrapper<>();
         lqw.eq(ServiceDO::getGroupId, groupId)
                 .eq(ServiceDO::getMethod, method);
+        //项目的控制器类的方法具有唯一性
+        return serviceMapper.selectCount(lqw) > 0;
+    }
+
+    /**
+     * 判断服务处理器类中是否存在查询的方法
+     *
+     * @param groupId 分组ID
+     * @param uri     uri
+     * @return
+     */
+    @Override
+    public boolean existUri(String groupId, String uri) {
+        AssertUtils.isTrue(StringUtils.isNotBlank(groupId), "分组ID不能为空");
+        AssertUtils.isTrue(StringUtils.isNotBlank(uri), "路径参数不能为空");
+        LambdaQueryWrapper<ServiceDO> lqw = new LambdaQueryWrapper<>();
+        lqw.eq(ServiceDO::getGroupId, groupId)
+                .eq(ServiceDO::getUri, uri);
         //项目的控制器类的方法具有唯一性
         return serviceMapper.selectCount(lqw) > 0;
     }

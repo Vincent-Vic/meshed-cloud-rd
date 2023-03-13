@@ -57,6 +57,7 @@ public class SkeletonCmdExe implements CommandExecute<Skeleton, SingleResponse<S
 
 
         try {
+
             String branch = cliGateway.archetypeWithPush(skeleton.getRepositoryId(),
                     new BuildArchetype(archetype, artifact, new Branch(WORKSPACE, MASTER)));
             if (StringUtils.isNotBlank(branch)) {

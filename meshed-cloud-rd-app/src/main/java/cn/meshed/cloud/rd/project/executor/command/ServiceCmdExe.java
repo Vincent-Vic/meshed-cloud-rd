@@ -1,5 +1,6 @@
 package cn.meshed.cloud.rd.project.executor.command;
 
+import cn.hutool.core.util.StrUtil;
 import cn.meshed.cloud.cqrs.CommandExecute;
 import cn.meshed.cloud.rd.domain.project.Field;
 import cn.meshed.cloud.rd.domain.project.Model;
@@ -12,13 +13,13 @@ import cn.meshed.cloud.rd.domain.project.gateway.ServiceGateway;
 import cn.meshed.cloud.rd.domain.project.gateway.ServiceGroupGateway;
 import cn.meshed.cloud.rd.project.command.ServiceCmd;
 import cn.meshed.cloud.rd.project.enums.BaseGenericsEnum;
+import cn.meshed.cloud.rd.project.enums.ReleaseStatusEnum;
 import cn.meshed.cloud.rd.project.enums.ServiceAccessModeEnum;
 import cn.meshed.cloud.rd.project.enums.ServiceTypeEnum;
 import cn.meshed.cloud.utils.AssertUtils;
 import cn.meshed.cloud.utils.CopyUtils;
 import cn.meshed.cloud.utils.ResultUtils;
 import com.alibaba.cola.dto.Response;
-import com.alibaba.cola.exception.SysException;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -62,40 +63,46 @@ public class ServiceCmdExe implements CommandExecute<ServiceCmd, Response> {
         assert serviceGroup != null;
         service.setGroupId(serviceGroup.getUuid());
         service.setProjectKey(serviceGroup.getProjectKey());
-        if (StringUtils.isBlank(service.getUuid())) {
-            service.initService();
-        }
-        if (ServiceTypeEnum.RPC == serviceGroup.getType()) {
-            handleRpc(service);
-        }
-
 
         Project project = projectGateway.queryByKey(serviceGroup.getProjectKey());
         AssertUtils.isTrue(project != null, "服务分组归属系统异常不存在");
+        service.setType(serviceGroup.getType());
+
+        if (StringUtils.isBlank(service.getUuid())) {
+            service.initService(serviceGroup);
+        }
         //请求和响应字段处理
         Set<Field> requests = CopyUtils.copySetProperties(serviceCmd.getRequests(), Field::new);
         Set<Field> responses = CopyUtils.copySetProperties(serviceCmd.getResponses(), Field::new);
+
+        //排除rpc无需的信息
+        if (ServiceTypeEnum.RPC == serviceGroup.getType()) {
+            handleRpc(requests);
+        }
         assert project != null;
+
         Set<Model> newModels = service.handleFields(requests, responses);
         if (CollectionUtils.isNotEmpty(newModels)) {
+            String classNamePrefix = StrUtil.upperFirst(serviceGroup.getClassName()
+                    .replaceAll(serviceGroup.getType().getKey(), ""));
             newModels.forEach(model -> {
+                model.setClassName(classNamePrefix + model.getClassName());
                 model.setProjectKey(serviceGroup.getProjectKey());
                 model.setDomainKey(serviceGroup.getDomainKey());
                 model.buildPackageName(project.getBasePackage());
+                //内部操作的模型直接加入待发布队列
+                model.setReleaseStatus(ReleaseStatusEnum.PROCESSING);
             });
             //批量新增产生的新模型
-            Integer saveBatch = modelGateway.saveBatch(newModels);
-            if (saveBatch != newModels.size()) {
-                throw new SysException("新产生模型保存失败");
-            }
+            AssertUtils.isTrue(modelGateway.batchSaveOrOnlyUpdateField(project.getKey(), newModels), "产生模型失败");
         }
 
         String uuid = serviceGateway.save(service);
         return ResultUtils.of(uuid);
     }
 
-    private void handleRpc(Service service) {
-        service.getRequests().forEach(field -> {
+    private void handleRpc(Set<Field> fields) {
+        fields.forEach(field -> {
             //RPC 无需路径参数和JSON特殊标识，避免异常出现
             if (field.getGeneric() == BaseGenericsEnum.JSON || field.getGeneric() == BaseGenericsEnum.PATH_VARIABLE) {
                 field.setGeneric(BaseGenericsEnum.NONE);

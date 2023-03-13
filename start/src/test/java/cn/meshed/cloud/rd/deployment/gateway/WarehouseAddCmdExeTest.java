@@ -28,8 +28,8 @@ public class WarehouseAddCmdExeTest {
     @Test
     public void execute() {
         WarehouseAddCmd warehouseAddCmd = new WarehouseAddCmd();
-        warehouseAddCmd.setProjectKey("PROPERTY9");
-        warehouseAddCmd.setRepoName("meshed-cloud-property9");
+        warehouseAddCmd.setProjectKey("PROPERTY");
+        warehouseAddCmd.setRepoName("meshed-cloud-property");
         warehouseAddCmd.setDescription("xxxxx");
         warehouseAddCmd.setPurposeType(WarehousePurposeTypeEnum.SERVICE);
         warehouseAddCmd.setName("xxx");

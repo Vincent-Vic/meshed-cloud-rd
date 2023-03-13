@@ -21,12 +21,20 @@ public interface ServiceGateway extends ISave<Service, String>, IQuery<String, S
     /**
      * 判断服务处理器类中是否存在查询的方法
      *
-     * @param projectKey 项目key
-     * @param className  控制器
-     * @param method     方法名称
+     * @param groupId 分组ID
+     * @param method  方法名称
      * @return
      */
-    boolean existMethodName(String projectKey, String method);
+    boolean existMethodName(String groupId, String method);
+
+    /**
+     * 判断服务处理器类中是否存在查询的方法
+     *
+     * @param groupId 分组ID
+     * @param uri     uri
+     * @return
+     */
+    boolean existUri(String groupId, String uri);
 
     /**
      * 查询项目的待发布服务详情列表

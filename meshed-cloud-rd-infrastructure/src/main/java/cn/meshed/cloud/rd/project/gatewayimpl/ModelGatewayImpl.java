@@ -22,9 +22,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -82,6 +85,76 @@ public class ModelGatewayImpl implements ModelGateway {
 
         //返回uuid
         return uuid;
+    }
+
+    /**
+     * 批量保存模型（含字段）或仅更新字段
+     *
+     * @param projectKey 项目唯一标识
+     * @param models     模型
+     * @return 成功与否
+     */
+    @Override
+    public boolean batchSaveOrOnlyUpdateField(String projectKey, Set<Model> models) {
+        if (CollectionUtils.isEmpty(models)) {
+            return false;
+        }
+        Set<String> classNames = models.stream().map(Model::getClassName).collect(Collectors.toSet());
+        AssertUtils.isTrue(CollectionUtils.isNotEmpty(classNames), "【批量保存模型（含字段）或仅更新字段】模型数据不规范异常");
+        //查询出已有的模型
+        LambdaQueryWrapper<ModelDO> lqw = new LambdaQueryWrapper<>();
+        lqw.eq(ModelDO::getProjectKey, projectKey).in(ModelDO::getClassName, classNames);
+        List<ModelDO> modelOldList = modelMapper.selectList(lqw);
+        if (CollectionUtils.isNotEmpty(modelOldList)) {
+            Map<String, ModelDO> modelMap = modelOldList.stream()
+                    .collect(Collectors.toMap(ModelDO::getClassName, Function.identity()));
+            Set<Field> fields = new HashSet<>();
+            Set<String> clearList = new HashSet<>();
+            Set<Model> newModels = new HashSet<>();
+            models.stream().filter(Objects::nonNull).forEach(model -> {
+                ModelDO modelDO = modelMap.get(model.getClassName());
+                if (modelDO != null) {
+                    if (CollectionUtils.isNotEmpty(model.getFields())) {
+                        Set<Field> fieldSet = model.getFields().stream().filter(Objects::nonNull).peek(field -> {
+                            field.setRelevanceType(RelevanceTypeEnum.MODEL);
+                            field.setRelevanceId(modelDO.getUuid());
+                        }).collect(Collectors.toSet());
+                        fields.addAll(fieldSet);
+                    }
+                    clearList.add(modelDO.getUuid());
+                } else {
+                    newModels.add(model);
+
+                }
+            });
+
+            //先删除模型下无字段的数据
+            fieldGateway.delByGroupId(clearList, RelevanceTypeEnum.MODEL);
+            //仅更新的字段保存
+            fieldGateway.saveBatch(RelevanceTypeEnum.MODEL, fields);
+            //新增保存
+            newModels.forEach(this::save);
+        } else {
+            //全部是新增
+            models.forEach(this::save);
+        }
+        return true;
+    }
+
+    /**
+     * <h1>批量保存对象</h1>
+     *
+     * @param models 模型列表
+     * @return 保存个数
+     */
+    @Override
+    public Integer saveBatch(Set<Model> models) {
+        if (CollectionUtils.isEmpty(models)) {
+            return -1;
+        }
+        //查询已经存在的类
+
+        return modelMapper.insertBatch(CopyUtils.copyListProperties(models, ModelDO::new));
     }
 
     @NotNull
@@ -153,16 +226,10 @@ public class ModelGatewayImpl implements ModelGateway {
         //当项目key不存在时会判断这个系统的类名唯一值
         lqw.eq(ModelDO::getProjectKey, projectKey.toUpperCase());
         lqw.eq(ModelDO::getReleaseStatus, ReleaseStatusEnum.PROCESSING);
-        Set<Model> models = CopyUtils.copySetProperties(modelMapper.selectList(lqw), Model::new);
+        List<ModelDO> list = modelMapper.selectList(lqw);
+        Set<Model> models = CopyUtils.copySetProperties(list, Model::new);
         if (CollectionUtils.isEmpty(models)) {
             return models;
-        }
-        Set<String> uuids = models.stream().map(Model::getUuid).collect(Collectors.toSet());
-        Set<Field> fields = fieldGateway.listByModels(uuids);
-        if (CollectionUtils.isNotEmpty(fields)) {
-            Map<String, Set<Field>> fieldMap = fields.stream()
-                    .collect(Collectors.groupingBy(Field::getRelevanceId, Collectors.toSet()));
-            models.forEach(model -> model.setFields(fieldMap.get(model.getUuid())));
         }
         return assembleModelDetailsList(models);
     }
@@ -237,17 +304,4 @@ public class ModelGatewayImpl implements ModelGateway {
                 .peek(model -> model.setFields(listMap.get(model.getUuid()))).collect(Collectors.toSet());
     }
 
-    /**
-     * <h1>批量保存对象</h1>
-     *
-     * @param models 模型列表
-     * @return 保存个数
-     */
-    @Override
-    public Integer saveBatch(Set<Model> models) {
-        if (CollectionUtils.isEmpty(models)) {
-            return -1;
-        }
-        return modelMapper.insertBatch(CopyUtils.copyListProperties(models, ModelDO::new));
-    }
 }

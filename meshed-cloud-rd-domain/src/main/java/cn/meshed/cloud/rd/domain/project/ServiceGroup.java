@@ -81,6 +81,9 @@ public class ServiceGroup implements Serializable {
 
     public void initServiceGroup(String groupKey, String basePackage) {
         this.className = StrUtil.upperFirst(groupKey) + this.type.getKey();
+        if (ServiceTypeEnum.RPC == this.type) {
+            this.uri = this.className;
+        }
         this.version = INIT_VERSION;
         AssertUtils.isTrue(StringUtils.isNotBlank(this.domainKey), "领域标识不能为空");
         this.packageName = GenerateUtils.buildServicePackageName(basePackage, this.domainKey, this.className);

@@ -36,7 +36,7 @@ public class AsyncPublishStrategyTest {
         ClientPublish clientPublish = new ClientPublish();
         clientPublish.setProjectKey("PROPERTY");
         clientPublish.setBasePackage("cn.meshed.cloud.property");
-        clientPublish.setRepositoryId("3219116");
+        clientPublish.setRepositoryId("3243305");
         clientPublish.setCommitMessage("生成客户端接口合模型");
         clientPublish.setBranch(new Branch(WORKSPACE, MASTER));
         asyncPublishStrategy.asyncPublish(PublishType.CLIENT, clientPublish);

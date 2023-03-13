@@ -38,9 +38,9 @@ public class ModelCmdExeTest {
         modelCmd.setDomain("property");
         modelCmd.setDescription("property xxx");
         modelCmd.setEnname("Property");
-        modelCmd.setName("项目");
+        modelCmd.setName("资产操作");
         modelCmd.setProjectKey("PROPERTY");
-        modelCmd.setType(ModelTypeEnum.QUERY);
+        modelCmd.setType(ModelTypeEnum.COMMAND);
         modelCmd.setSuperClass("DTO");
         RequestFieldDTO requestFieldDTO = new RequestFieldDTO();
         requestFieldDTO.setFieldType("String");

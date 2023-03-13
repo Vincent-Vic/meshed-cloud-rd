@@ -126,6 +126,9 @@ public class CliGatewayImpl implements CliGateway {
     public String archetypeWithPush(String repositoryId, BuildArchetype buildArchetype) throws SysException {
 
         AssertUtils.isTrue(buildArchetype.getBranch() != null, "分支信息不能为空");
+
+        //重建工作分支，避免已存在
+        repositoryGateway.rebuildBranch(repositoryId, buildArchetype.getBranch());
         //构建原型
         String workspacePath = buildArchetype(buildArchetype);
 

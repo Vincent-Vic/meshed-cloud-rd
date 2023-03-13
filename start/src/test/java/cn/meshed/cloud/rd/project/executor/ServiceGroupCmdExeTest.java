@@ -37,8 +37,8 @@ public class ServiceGroupCmdExeTest {
         serviceGroupCmd.setName("资产服务控制器");
         serviceGroupCmd.setProjectKey("Property");
         serviceGroupCmd.setKey("Property");
-        serviceGroupCmd.setUri("/property");
-        serviceGroupCmd.setType(ServiceTypeEnum.API);
+//        serviceGroupCmd.setUri("/property");
+        serviceGroupCmd.setType(ServiceTypeEnum.RPC);
         return serviceGroupCmd;
     }
 }

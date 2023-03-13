@@ -1,4 +1,4 @@
-package cn.meshed.cloud.rd.deployment.gatewayimpl;
+package cn.meshed.cloud.rd.repo.gatewayimpl;
 
 import cn.hutool.http.HttpStatus;
 import cn.meshed.cloud.rd.domain.repo.Branch;
@@ -317,8 +317,7 @@ public class CodeupRepositoryGatewayImpl implements RepositoryGateway {
         if (CollectionUtils.isNotEmpty(oldFiles)) {
             int success = 0;
             for (RepositoryFile file : oldFiles) {
-                log.debug("更新文件：{}", file.getFilePath());
-                System.out.println(file.getContent());
+                log.debug("仓库: {} 更新文件: {}", commitRepositoryFile.getRepositoryId(), file.getFilePath());
                 UpdateFileRequest updateFileRequest = new UpdateFileRequest();
                 updateFileRequest.setOrganizationId(organizationId);
                 updateFileRequest.setBranchName(commitRepositoryFile.getBranchName());
@@ -356,8 +355,7 @@ public class CodeupRepositoryGatewayImpl implements RepositoryGateway {
         if (CollectionUtils.isNotEmpty(newFiles)) {
             int success = 0;
             for (RepositoryFile file : newFiles) {
-                log.debug("新建文件：{}", file.getFilePath());
-                System.out.println(file.getContent());
+                log.debug("仓库: {} 新建文件: {}", commitRepositoryFile.getRepositoryId(), file.getFilePath());
                 CreateFileRequest createFileRequest = new CreateFileRequest();
                 createFileRequest.setOrganizationId(organizationId);
                 createFileRequest.setFilePath(file.getFilePath());

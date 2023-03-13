@@ -39,11 +39,15 @@ public class ServiceCmdExeTest {
     @NotNull
     private ServiceCmd buildMockServiceCmd() {
         ServiceCmd serviceCmd = new ServiceCmd();
+        //api
         serviceCmd.setGroupId("11d9d8d8cc37ec7dfaa2116ec59aca29");
+        //rpc
+//        serviceCmd.setGroupId("832a8955571acf359433a2fe09c2f45d");
         serviceCmd.setDescription("project xxx");
         serviceCmd.setName("资产服务列表");
-        serviceCmd.setMethod("delete");
-        serviceCmd.setUri("/delete");
+        serviceCmd.setMethod("Edit");
+        // todo 确保控制器内唯一
+        serviceCmd.setUri("/edit");
         serviceCmd.setIdentifier("xxx");
         serviceCmd.setAccessMode(ServiceAccessModeEnum.ANONYMOUS);
         serviceCmd.setRequestMode(RequestModeEnum.JSON);
@@ -63,11 +67,11 @@ public class ServiceCmdExeTest {
         serviceCmd.setRequests(Arrays.asList(requestFieldDTO, requestFieldDTO2));
         //响应参数
         ResponsesFieldDTO responsesFieldDTO = new ResponsesFieldDTO();
-        responsesFieldDTO.setExplain("资产名称");
+        responsesFieldDTO.setExplain("资产响应信息");
         responsesFieldDTO.setFieldName("responseName");
         responsesFieldDTO.setFieldType("String");
         serviceCmd.setResponses(Collections.singletonList(responsesFieldDTO));
-        serviceCmd.setName("项目");
+        serviceCmd.setName("保存");
         return serviceCmd;
     }
 }

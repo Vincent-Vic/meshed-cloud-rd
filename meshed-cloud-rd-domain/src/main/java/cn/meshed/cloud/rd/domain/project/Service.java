@@ -10,9 +10,13 @@ import cn.meshed.cloud.rd.project.enums.RequestModeEnum;
 import cn.meshed.cloud.rd.project.enums.RequestTypeEnum;
 import cn.meshed.cloud.rd.project.enums.ServiceAccessModeEnum;
 import cn.meshed.cloud.rd.project.enums.ServiceModelStatusEnum;
+import cn.meshed.cloud.rd.project.enums.ServiceTypeEnum;
 import cn.meshed.cloud.utils.AssertUtils;
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.Setter;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
 import java.util.Collections;
@@ -47,6 +51,11 @@ public class Service implements Serializable {
     private String groupId;
 
     /**
+     * 服务类型
+     */
+    private ServiceTypeEnum type;
+
+    /**
      * 模型分组所属项目key
      */
     private String projectKey;
@@ -59,6 +68,7 @@ public class Service implements Serializable {
     /**
      * 服务方法名称
      */
+    @Setter(AccessLevel.NONE)
     private String method;
 
     /**
@@ -125,15 +135,24 @@ public class Service implements Serializable {
      */
     private Set<Field> responses;
 
-    public void initService() {
+    public void setMethod(String method) {
+        AssertUtils.isTrue(StringUtils.isNotBlank(method), "方法不能为空");
+        this.method = StrUtil.lowerFirst(method);
+    }
+
+    public void initService(ServiceGroup serviceGroup) {
         this.releaseStatus = ReleaseStatusEnum.EDIT;
         this.status = ServiceModelStatusEnum.DEV;
         this.version = INIT_VERSION;
         this.ownerId = SecurityContext.getOperatorUserId();
+        if (ServiceTypeEnum.RPC == this.type) {
+            this.uri = String.format("%s#%s", serviceGroup.getClassName(), this.method);
+        }
     }
 
     public Set<Model> handleFields(Set<Field> requests, Set<Field> responses) {
         AssertUtils.isTrue(this.requestMode != null, "请求模式不能为空");
+        AssertUtils.isTrue(this.type != null, "请先设置服务类型");
         Set<Model> models = new HashSet<>();
         Model requestModel = handleRequestFields(requests);
         addModelSet(models, requestModel);
@@ -169,10 +188,10 @@ public class Service implements Serializable {
         Model model = buildBaseModel(requests, name);
 
         if (RequestModeEnum.PAGE == this.requestMode) {
-            model.setType(ModelTypeEnum.PAGE_PARAM);
+            model.setType(getModelTypeEnum(RequestModeEnum.PAGE.name()));
             model.setSuperClass(PAGE_QUERY);
         } else {
-            model.setType(ModelTypeEnum.PARAM);
+            model.setType(getModelTypeEnum("REQUEST"));
             model.setSuperClass(DTO);
         }
         model.initModel(this.method);
@@ -192,6 +211,22 @@ public class Service implements Serializable {
         this.requests = fields;
 
         return model;
+    }
+
+    private ModelTypeEnum getModelTypeEnum(String strategy) {
+        if (StringUtils.isBlank(strategy)) {
+            return ModelTypeEnum.DTO;
+        }
+        switch (strategy) {
+            case "PAGE":
+                return this.type == ServiceTypeEnum.API ? ModelTypeEnum.PAGE_PARAM : ModelTypeEnum.PAGE_REQUEST;
+            case "REQUEST":
+                return this.type == ServiceTypeEnum.API ? ModelTypeEnum.PARAM : ModelTypeEnum.REQUEST;
+            case "RESPONSE":
+                return this.type == ServiceTypeEnum.API ? ModelTypeEnum.VO : ModelTypeEnum.RESPONSE;
+            default:
+                return ModelTypeEnum.DTO;
+        }
     }
 
     private Field buildBaseField(String name, String className) {
@@ -219,7 +254,7 @@ public class Service implements Serializable {
         String name = this.name + "返回参数";
         //其他模式均需要合并，路径参数依旧支持独立（合并中依旧包含路径参数）
         Model model = buildBaseModel(responses, name);
-        model.setType(ModelTypeEnum.VO);
+        model.setType(getModelTypeEnum("RESPONSE"));
         model.setSuperClass(DTO);
         model.initModel(this.method);
         //组装成字段
