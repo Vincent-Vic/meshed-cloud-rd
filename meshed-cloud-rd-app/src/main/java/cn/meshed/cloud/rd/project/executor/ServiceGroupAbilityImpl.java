@@ -2,14 +2,17 @@ package cn.meshed.cloud.rd.project.executor;
 
 import cn.meshed.cloud.rd.domain.project.ability.ServiceGroupAbility;
 import cn.meshed.cloud.rd.project.command.ServiceGroupCmd;
-import cn.meshed.cloud.rd.project.data.ServiceGroupDTO;
-import cn.meshed.cloud.rd.project.query.ServiceByClassNameQry;
+import cn.meshed.cloud.rd.project.data.ServiceGroupSelectDTO;
+import cn.meshed.cloud.rd.project.executor.command.ServiceGroupCmdExe;
+import cn.meshed.cloud.rd.project.executor.query.ServiceGroupAvailableClassQryExe;
+import cn.meshed.cloud.rd.project.executor.query.ServiceGroupBySelectQryExe;
+import cn.meshed.cloud.rd.project.query.ServiceAvailableClassQry;
 import com.alibaba.cola.dto.Response;
 import com.alibaba.cola.dto.SingleResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
+import java.util.Set;
 
 /**
  * <h1></h1>
@@ -20,6 +23,11 @@ import java.util.List;
 @RequiredArgsConstructor
 @Component
 public class ServiceGroupAbilityImpl implements ServiceGroupAbility {
+
+    private final ServiceGroupCmdExe serviceGroupCmdExe;
+    private final ServiceGroupAvailableClassQryExe serviceGroupAvailableClassQryExe;
+    private final ServiceGroupBySelectQryExe serviceGroupBySelectQryExe;
+
     /**
      * 服务分组选择获取
      *
@@ -27,8 +35,8 @@ public class ServiceGroupAbilityImpl implements ServiceGroupAbility {
      * @return {@link SingleResponse < List < ServiceGroupDTO >>}
      */
     @Override
-    public SingleResponse<List<ServiceGroupDTO>> select(String projectKey) {
-        return null;
+    public SingleResponse<Set<ServiceGroupSelectDTO>> select(String projectKey) {
+        return serviceGroupBySelectQryExe.execute(projectKey);
     }
 
     /**
@@ -39,17 +47,17 @@ public class ServiceGroupAbilityImpl implements ServiceGroupAbility {
      */
     @Override
     public Response save(ServiceGroupCmd serviceGroupCmd) {
-        return null;
+        return serviceGroupCmdExe.execute(serviceGroupCmd);
     }
 
     /**
      * 检查方法是否可用（控制器中唯一性）
      *
-     * @param serviceByClassNameQry 检查参数
+     * @param serviceAvailableClassQry 检查参数
      * @return {@link Response}
      */
     @Override
-    public Response checkClassName(ServiceByClassNameQry serviceByClassNameQry) {
-        return null;
+    public Response availableClassName(ServiceAvailableClassQry serviceAvailableClassQry) {
+        return serviceGroupAvailableClassQryExe.execute(serviceAvailableClassQry);
     }
 }

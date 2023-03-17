@@ -4,7 +4,8 @@ import cn.meshed.cloud.rd.domain.project.ability.ServiceGroupAbility;
 import cn.meshed.cloud.rd.project.ServiceGroupAdapter;
 import cn.meshed.cloud.rd.project.command.ServiceGroupCmd;
 import cn.meshed.cloud.rd.project.data.ServiceGroupDTO;
-import cn.meshed.cloud.rd.project.query.ServiceByClassNameQry;
+import cn.meshed.cloud.rd.project.data.ServiceGroupSelectDTO;
+import cn.meshed.cloud.rd.project.query.ServiceAvailableClassQry;
 import com.alibaba.cola.dto.Response;
 import com.alibaba.cola.dto.SingleResponse;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 import java.util.List;
+import java.util.Set;
 
 /**
  * <h1></h1>
@@ -33,7 +35,7 @@ public class ServiceGroupWebAdapter implements ServiceGroupAdapter {
      * @return {@link SingleResponse< List <ServiceGroupDTO>>}
      */
     @Override
-    public SingleResponse<List<ServiceGroupDTO>> select(String projectKey) {
+    public SingleResponse<Set<ServiceGroupSelectDTO>> select(String projectKey) {
         return serviceGroupAbility.select(projectKey);
     }
 
@@ -49,13 +51,14 @@ public class ServiceGroupWebAdapter implements ServiceGroupAdapter {
     }
 
     /**
-     * 检查方法是否可用（控制器中唯一性）
+     * 检查类名是否可用（控制器中唯一性）
      *
-     * @param serviceByClassNameQry 检查参数
+     * @param serviceAvailableClassQry 检查参数
      * @return {@link Response}
      */
     @Override
-    public Response checkClassName(@Valid ServiceByClassNameQry serviceByClassNameQry) {
-        return serviceGroupAbility.checkClassName(serviceByClassNameQry);
+    public Response availableClassName(@Valid ServiceAvailableClassQry serviceAvailableClassQry) {
+        return serviceGroupAbility.availableClassName(serviceAvailableClassQry);
     }
+
 }

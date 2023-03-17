@@ -51,15 +51,16 @@ public class ProjectWebAdapter implements ProjectAdapter {
     }
 
     /**
-     * 保存功能
+     * 发起项目（新增项目/申请项目）
      *
      * @param projectCmd 项目数据
      * @return {@link Response}
      */
     @Override
-    public Response save(@Valid ProjectCmd projectCmd) {
+    public Response apply(@Valid ProjectCmd projectCmd) {
         return projectAbility.save(projectCmd);
     }
+
 
     /**
      * 变更项目
@@ -83,7 +84,8 @@ public class ProjectWebAdapter implements ProjectAdapter {
      * @return {@link Response}
      */
     @Override
-    public Response checkKey(String key) {
-        return null;
+    public Response availableKey(String key) {
+        return projectAbility.availableKey(key);
     }
+
 }

@@ -6,8 +6,7 @@ import cn.meshed.cloud.rd.project.command.ServiceCmd;
 import cn.meshed.cloud.rd.project.data.ServiceDTO;
 import cn.meshed.cloud.rd.project.data.ServiceDetailDTO;
 import cn.meshed.cloud.rd.project.data.ServiceReleaseCountDTO;
-import cn.meshed.cloud.rd.project.query.ServiceByMethodQry;
-import cn.meshed.cloud.rd.project.query.ServiceByOneQry;
+import cn.meshed.cloud.rd.project.query.ServiceAvailableMethodQry;
 import cn.meshed.cloud.rd.project.query.ServicePageQry;
 import com.alibaba.cola.dto.PageResponse;
 import com.alibaba.cola.dto.Response;
@@ -45,14 +44,12 @@ public class ServiceWebAdapter implements ServiceAdapter {
     /**
      * 详情
      *
-     * @param uuid            服务uuid
-     * @param serviceByOneQry
+     * @param uuid 服务uuid
      * @return {@link SingleResponse<ServiceDetailDTO>}
      */
     @Override
-    public SingleResponse<ServiceDetailDTO> details(String uuid, @Valid ServiceByOneQry serviceByOneQry) {
-        serviceByOneQry.setUuid(uuid);
-        return serviceAbility.details(serviceByOneQry);
+    public SingleResponse<ServiceDetailDTO> details(String uuid) {
+        return serviceAbility.details(uuid);
     }
 
     /**
@@ -80,11 +77,12 @@ public class ServiceWebAdapter implements ServiceAdapter {
     /**
      * 检查方法是否可用（控制器中唯一性）
      *
-     * @param serviceByMethodQry 检查参数
+     * @param serviceAvailableMethodQry 检查参数
      * @return {@link Response}
      */
     @Override
-    public Response checkMethod(@Valid ServiceByMethodQry serviceByMethodQry) {
-        return null;
+    public Response availableMethodName(@Valid ServiceAvailableMethodQry serviceAvailableMethodQry) {
+        return serviceAbility.availableMethodName(serviceAvailableMethodQry);
     }
+
 }

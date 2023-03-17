@@ -1,15 +1,14 @@
 package cn.meshed.cloud.rd.project.executor.query;
 
 import cn.meshed.cloud.cqrs.QueryExecute;
+import cn.meshed.cloud.dto.ShowType;
 import cn.meshed.cloud.rd.domain.project.gateway.DomainGateway;
 import cn.meshed.cloud.utils.AssertUtils;
 import cn.meshed.cloud.utils.ResultUtils;
-import com.alibaba.cola.dto.SingleResponse;
+import com.alibaba.cola.dto.Response;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
-
-import java.util.Set;
 
 /**
  * <h1></h1>
@@ -19,7 +18,7 @@ import java.util.Set;
  */
 @RequiredArgsConstructor
 @Component
-public class DomainSelectQryExe implements QueryExecute<String, SingleResponse<Set<String>>> {
+public class DomainAvailableKeyQryExe implements QueryExecute<String, Response> {
 
     private final DomainGateway domainGateway;
 
@@ -28,9 +27,8 @@ public class DomainSelectQryExe implements QueryExecute<String, SingleResponse<S
      * @return
      */
     @Override
-    public SingleResponse<Set<String>> execute(String projectKey) {
+    public Response execute(String projectKey) {
         AssertUtils.isTrue(StringUtils.isNotBlank(projectKey), "项目唯一标识不能为空");
-        Set<String> select = domainGateway.select(projectKey);
-        return ResultUtils.of(select);
+        return ResultUtils.of(!domainGateway.existDomainKey(projectKey), "领域标识已经存在", ShowType.SILENT);
     }
 }

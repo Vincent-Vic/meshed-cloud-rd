@@ -2,6 +2,7 @@ package cn.meshed.cloud.rd.project.gatewayimpl;
 
 import cn.meshed.cloud.rd.domain.project.Field;
 import cn.meshed.cloud.rd.domain.project.Service;
+import cn.meshed.cloud.rd.domain.project.ServiceItem;
 import cn.meshed.cloud.rd.domain.project.constant.RelevanceTypeEnum;
 import cn.meshed.cloud.rd.domain.project.gateway.FieldGateway;
 import cn.meshed.cloud.rd.domain.project.gateway.ModelGateway;
@@ -10,20 +11,25 @@ import cn.meshed.cloud.rd.project.convertor.ServiceConvertor;
 import cn.meshed.cloud.rd.project.enums.RequestModeEnum;
 import cn.meshed.cloud.rd.project.enums.ServiceTypeEnum;
 import cn.meshed.cloud.rd.project.gatewayimpl.database.dataobject.ServiceDO;
+import cn.meshed.cloud.rd.project.gatewayimpl.database.dataobject.ServiceGroupDO;
+import cn.meshed.cloud.rd.project.gatewayimpl.database.mapper.ServiceGroupMapper;
 import cn.meshed.cloud.rd.project.gatewayimpl.database.mapper.ServiceMapper;
+import cn.meshed.cloud.rd.project.gatewayimpl.database.vo.ServiceVO;
+import cn.meshed.cloud.rd.project.query.ServiceGroupQry;
 import cn.meshed.cloud.rd.project.query.ServicePageQry;
 import cn.meshed.cloud.utils.AssertUtils;
 import cn.meshed.cloud.utils.CopyUtils;
+import cn.meshed.cloud.utils.PageUtils;
 import com.alibaba.cola.dto.PageResponse;
 import com.alibaba.cola.exception.SysException;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.github.pagehelper.Page;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -43,23 +49,53 @@ import static cn.meshed.cloud.rd.domain.common.constant.Constant.BASE_JAVA_TYPES
 public class ServiceGatewayImpl implements ServiceGateway {
 
     private final ServiceMapper serviceMapper;
+    private final ServiceGroupMapper serviceGroupMapper;
     private final ModelGateway modelGateway;
     private final FieldGateway fieldGateway;
-    private final List<RelevanceTypeEnum> groupTypes = new ArrayList<RelevanceTypeEnum>(2) {{
-        add(RelevanceTypeEnum.REQUEST);
-        add(RelevanceTypeEnum.RESPONSE);
-    }};
 
 
     /**
      * <h1>分页搜索</h1>
      *
-     * @param param@return {@link PageResponse<Service>}
+     * @param pageQry
+     * @return {@link PageResponse<Service>}
      */
     @Override
-    public PageResponse<Service> searchPageList(ServicePageQry param) {
-        return null;
+    public PageResponse<ServiceItem> searchPageList(ServicePageQry pageQry) {
+        AssertUtils.isTrue(StringUtils.isNotBlank(pageQry.getProjectKey()), "项目唯一标识不能为空");
+        Page<Object> page = PageUtils.startPage(pageQry);
+        List<ServiceVO> list = serviceMapper.list(pageQry);
+        return PageUtils.of(list, page, ServiceItem::new);
     }
+
+    private Set<String> getGroupIds(ServicePageQry pageQry) {
+        ServiceGroupQry serviceGroupQry = new ServiceGroupQry();
+        serviceGroupQry.setDomain(pageQry.getDomain());
+        serviceGroupQry.setProjectKey(pageQry.getProjectKey());
+        serviceGroupQry.setType(pageQry.getType());
+        return getGroupIdList(serviceGroupQry);
+    }
+
+    /**
+     * 根据条件分组ID列表
+     *
+     * @param serviceGroupQry 项目key
+     * @return 详情列表
+     */
+    public Set<String> getGroupIdList(ServiceGroupQry serviceGroupQry) {
+        LambdaQueryWrapper<ServiceGroupDO> lqw = new LambdaQueryWrapper<>();
+        lqw.eq(StringUtils.isNotBlank(serviceGroupQry.getProjectKey()),
+                ServiceGroupDO::getProjectKey, StringUtils.upperCase(serviceGroupQry.getProjectKey()));
+        lqw.eq(StringUtils.isNotBlank(serviceGroupQry.getDomain()),
+                ServiceGroupDO::getDomainKey, StringUtils.upperCase(serviceGroupQry.getDomain()));
+        lqw.eq(serviceGroupQry.getType() != null, ServiceGroupDO::getType, serviceGroupQry.getType());
+        List<ServiceGroupDO> serviceGroupList = serviceGroupMapper.selectList(lqw);
+        if (CollectionUtils.isEmpty(serviceGroupList)) {
+            return Collections.emptySet();
+        }
+        return serviceGroupList.stream().map(ServiceGroupDO::getUuid).collect(Collectors.toSet());
+    }
+
 
     /**
      * 查询
@@ -128,17 +164,18 @@ public class ServiceGatewayImpl implements ServiceGateway {
         if (service == null) {
             return null;
         }
-        AssertUtils.isTrue(!existMethodName(service.getGroupId(), service.getMethod()), "方法名称重复");
-        if (ServiceTypeEnum.API == service.getType()) {
-            AssertUtils.isTrue(!existUri(service.getGroupId(), service.getUri()), "URI重复");
-        }
+
 
         ServiceDO serviceDO = ServiceConvertor.toEntity(service, queryByUuid(service.getUuid()));
+
+        if (ServiceTypeEnum.API == service.getType()) {
+            AssertUtils.isTrue(!existUri(service.getGroupId(), service.getUri(), service.getUuid()), "URI重复");
+        }
         //保存服务
         if (StringUtils.isEmpty(serviceDO.getUuid())) {
+            AssertUtils.isTrue(!existMethodName(service.getGroupId(), service.getMethod()), "方法名称重复");
             //判断服务新增是否成功
             AssertUtils.isTrue(serviceMapper.insert(serviceDO) > 0, "服务新增失败");
-
         } else {
             //更新服务
             //判断服务新增是否成功
@@ -201,15 +238,18 @@ public class ServiceGatewayImpl implements ServiceGateway {
      *
      * @param groupId 分组ID
      * @param uri     uri
+     * @param uuid    服务ID 可为空
      * @return
      */
     @Override
-    public boolean existUri(String groupId, String uri) {
+    public boolean existUri(String groupId, String uri, String uuid) {
         AssertUtils.isTrue(StringUtils.isNotBlank(groupId), "分组ID不能为空");
         AssertUtils.isTrue(StringUtils.isNotBlank(uri), "路径参数不能为空");
         LambdaQueryWrapper<ServiceDO> lqw = new LambdaQueryWrapper<>();
         lqw.eq(ServiceDO::getGroupId, groupId)
-                .eq(ServiceDO::getUri, uri);
+                .eq(ServiceDO::getUri, uri)
+                //自身去除
+                .ne(StringUtils.isNotBlank(uuid), ServiceDO::getUuid, uuid);
         //项目的控制器类的方法具有唯一性
         return serviceMapper.selectCount(lqw) > 0;
     }

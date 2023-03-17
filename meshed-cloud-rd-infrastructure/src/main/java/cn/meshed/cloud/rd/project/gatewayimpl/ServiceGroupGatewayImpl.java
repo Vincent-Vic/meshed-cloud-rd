@@ -68,9 +68,23 @@ public class ServiceGroupGatewayImpl implements ServiceGroupGateway {
     public Set<ServiceGroup> select(String projectKey) {
         AssertUtils.isTrue(StringUtils.isNotBlank(projectKey), "项目唯一标识不能为空");
         LambdaQueryWrapper<ServiceGroupDO> lqw = new LambdaQueryWrapper<>();
-        lqw.select(ServiceGroupDO::getName, ServiceGroupDO::getClassName, ServiceGroupDO::getUuid);
+        lqw.select(ServiceGroupDO::getName, ServiceGroupDO::getClassName, ServiceGroupDO::getType,
+                ServiceGroupDO::getUuid, ServiceGroupDO::getProjectKey);
         lqw.eq(ServiceGroupDO::getProjectKey, projectKey);
         return CopyUtils.copySetProperties(serviceGroupMapper.selectList(lqw), ServiceGroup::new);
+    }
+
+    /**
+     * <h1>分页搜索</h1>
+     *
+     * @param uuids
+     * @return {@link List<ServiceGroup>}
+     */
+    @Override
+    public List<ServiceGroup> searchList(Set<String> uuids) {
+        LambdaQueryWrapper<ServiceGroupDO> lqw = new LambdaQueryWrapper<>();
+        lqw.in(ServiceGroupDO::getUuid, uuids);
+        return CopyUtils.copyListProperties(serviceGroupMapper.selectList(lqw), ServiceGroup::new);
     }
 
     /**
@@ -101,7 +115,7 @@ public class ServiceGroupGatewayImpl implements ServiceGroupGateway {
         LambdaQueryWrapper<ServiceGroupDO> lqw = new LambdaQueryWrapper<>();
         lqw.eq(ServiceGroupDO::getProjectKey, projectKey)
                 .eq(ServiceGroupDO::getClassName, className);
-        return serviceGroupMapper.selectCount(lqw) > 1;
+        return serviceGroupMapper.selectCount(lqw) > 0;
     }
 
     /**
@@ -147,8 +161,8 @@ public class ServiceGroupGatewayImpl implements ServiceGroupGateway {
 
     private Set<String> waitPublishGroupList(String projectKey) {
         LambdaQueryWrapper<ServiceDO> lqw = new LambdaQueryWrapper<>();
-        lqw.select(ServiceDO::getGroupId);
-        lqw.eq(ServiceDO::getProjectKey, projectKey)
+        lqw.select(ServiceDO::getGroupId)
+                .eq(ServiceDO::getProjectKey, projectKey)
                 .eq(ServiceDO::getReleaseStatus, ReleaseStatusEnum.PROCESSING);
         List<ServiceDO> serviceList = serviceMapper.selectList(lqw);
         if (CollectionUtils.isEmpty(serviceList)) {

@@ -6,14 +6,17 @@ import cn.meshed.cloud.rd.domain.project.constant.RelevanceTypeEnum;
 import cn.meshed.cloud.rd.domain.project.gateway.FieldGateway;
 import cn.meshed.cloud.rd.domain.project.gateway.ModelGateway;
 import cn.meshed.cloud.rd.project.convertor.ModelConvertor;
+import cn.meshed.cloud.rd.project.enums.ModelAccessModeEnum;
 import cn.meshed.cloud.rd.project.enums.ReleaseStatusEnum;
 import cn.meshed.cloud.rd.project.gatewayimpl.database.dataobject.ModelDO;
 import cn.meshed.cloud.rd.project.gatewayimpl.database.mapper.ModelMapper;
 import cn.meshed.cloud.rd.project.query.ModelPageQry;
 import cn.meshed.cloud.utils.AssertUtils;
 import cn.meshed.cloud.utils.CopyUtils;
+import cn.meshed.cloud.utils.PageUtils;
 import com.alibaba.cola.dto.PageResponse;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.github.pagehelper.Page;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -21,14 +24,16 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * <h1>模型网关实现</h1>
@@ -45,12 +50,22 @@ public class ModelGatewayImpl implements ModelGateway {
 
 
     /**
-     * @param modelPageQry
-     * @return
+     * @param pageQry 分页参数
+     * @return {@link PageResponse<Model>}
      */
     @Override
-    public PageResponse<Model> searchPageList(ModelPageQry modelPageQry) {
-        return null;
+    public PageResponse<Model> searchPageList(ModelPageQry pageQry) {
+        Page<Object> page = PageUtils.startPage(pageQry);
+        LambdaQueryWrapper<ModelDO> lqw = new LambdaQueryWrapper<>();
+        lqw.ne(ModelDO::getAccessMode, ModelAccessModeEnum.PRIVATE)
+                .eq(pageQry.getReleaseStatus() != null, ModelDO::getReleaseStatus, pageQry.getReleaseStatus())
+                .eq(pageQry.getType() != null, ModelDO::getType, pageQry.getType())
+                .and(StringUtils.isNotBlank(pageQry.getKeyword()), queryWrapper -> {
+                    queryWrapper.like(ModelDO::getName, pageQry.getKeyword())
+                            .or().like(ModelDO::getDescription, pageQry.getKeyword())
+                            .or().like(ModelDO::getClassName, pageQry.getKeyword());
+                });
+        return PageUtils.of(modelMapper.selectList(lqw), page, Model::new);
     }
 
     /**
@@ -63,10 +78,10 @@ public class ModelGatewayImpl implements ModelGateway {
         if (model == null) {
             return null;
         }
-        AssertUtils.isTrue(!existClassName(model.getProjectKey(), model.getClassName()), "生成类名重复");
         ModelDO modelDO = ModelConvertor.toEntity(model, queryByUuid(model.getUuid()));
         //保存模型
         if (StringUtils.isEmpty(modelDO.getUuid())) {
+            AssertUtils.isTrue(!existClassName(model.getProjectKey(), model.getClassName()), "生成类名重复");
             //判断模型新增是否成功
             AssertUtils.isTrue(modelMapper.insert(modelDO) > 0, "模型新增失败");
 
@@ -88,57 +103,92 @@ public class ModelGatewayImpl implements ModelGateway {
     }
 
     /**
-     * 批量保存模型（含字段）或仅更新字段
+     * 批量保存或更新模型（含字段）
      *
      * @param projectKey 项目唯一标识
      * @param models     模型
      * @return 成功与否
      */
     @Override
-    public boolean batchSaveOrOnlyUpdateField(String projectKey, Set<Model> models) {
+    public boolean batchSaveOrUpdate(String projectKey, Set<Model> models) {
         if (CollectionUtils.isEmpty(models)) {
             return false;
         }
+
+        /**
+         * 批量新增或者更新
+         */
         Set<String> classNames = models.stream().map(Model::getClassName).collect(Collectors.toSet());
         AssertUtils.isTrue(CollectionUtils.isNotEmpty(classNames), "【批量保存模型（含字段）或仅更新字段】模型数据不规范异常");
         //查询出已有的模型
         LambdaQueryWrapper<ModelDO> lqw = new LambdaQueryWrapper<>();
         lqw.eq(ModelDO::getProjectKey, projectKey).in(ModelDO::getClassName, classNames);
         List<ModelDO> modelOldList = modelMapper.selectList(lqw);
+        //
+        List<ModelDO> newModels = new ArrayList<>();
+        List<ModelDO> updateModels = new ArrayList<>();
+        //数据库存在已有的值
         if (CollectionUtils.isNotEmpty(modelOldList)) {
             Map<String, ModelDO> modelMap = modelOldList.stream()
-                    .collect(Collectors.toMap(ModelDO::getClassName, Function.identity()));
-            Set<Field> fields = new HashSet<>();
-            Set<String> clearList = new HashSet<>();
-            Set<Model> newModels = new HashSet<>();
+                    .collect(Collectors.toMap(ModelDO::getClassName, Function.identity(), ((modelFirst, modelSecond) -> {
+                        //如果两个状态都是一样的，比较版本号
+                        if (modelFirst.getReleaseStatus() == modelSecond.getReleaseStatus()) {
+                            return modelSecond.getVersion() > modelFirst.getVersion() ? modelSecond : modelFirst;
+                        }
+                        return modelFirst.getReleaseStatus() == ReleaseStatusEnum.RELEASE ? modelSecond : modelFirst;
+                    })));
             models.stream().filter(Objects::nonNull).forEach(model -> {
                 ModelDO modelDO = modelMap.get(model.getClassName());
+                //更新和模型分类
                 if (modelDO != null) {
-                    if (CollectionUtils.isNotEmpty(model.getFields())) {
-                        Set<Field> fieldSet = model.getFields().stream().filter(Objects::nonNull).peek(field -> {
-                            field.setRelevanceType(RelevanceTypeEnum.MODEL);
-                            field.setRelevanceId(modelDO.getUuid());
-                        }).collect(Collectors.toSet());
-                        fields.addAll(fieldSet);
-                    }
-                    clearList.add(modelDO.getUuid());
+                    updateModels.add(ModelConvertor.toEntity(model, modelDO));
                 } else {
-                    newModels.add(model);
-
+                    newModels.add(ModelConvertor.toEntity(model, modelDO));
                 }
             });
-
-            //先删除模型下无字段的数据
-            fieldGateway.delByGroupId(clearList, RelevanceTypeEnum.MODEL);
-            //仅更新的字段保存
-            fieldGateway.saveBatch(RelevanceTypeEnum.MODEL, fields);
-            //新增保存
-            newModels.forEach(this::save);
         } else {
             //全部是新增
-            models.forEach(this::save);
+            newModels.addAll(CopyUtils.copySetProperties(models, ModelDO::new));
         }
+
+        if (CollectionUtils.isNotEmpty(newModels)) {
+            modelMapper.insertBatch(newModels);
+        }
+        if (CollectionUtils.isNotEmpty(updateModels)) {
+            modelMapper.updateBatch(updateModels);
+        }
+
+        //
+        //待更新字段
+
+        Map<String, String> classNameUuidMap = Stream.of(newModels, updateModels)
+                .flatMap(Collection::stream).collect(Collectors.toMap(ModelDO::getClassName, ModelDO::getUuid));
+        //先清理掉旧的字段，再进行新增新字段
+        fieldGateway.delByGroupId(classNameUuidMap.keySet(), RelevanceTypeEnum.MODEL);
+        Set<Field> fields = models.stream()
+                .map(model -> assembleFieldSet(model.getFields(), classNameUuidMap.get(model.getClassName())))
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream).collect(Collectors.toSet());
+        fieldGateway.saveBatch(RelevanceTypeEnum.MODEL, fields);
         return true;
+    }
+
+    /**
+     * 设置关系id 返回字段列表
+     *
+     * @param fields 模型
+     * @param uuid
+     * @return
+     */
+    private Set<Field> assembleFieldSet(Set<Field> fields, String uuid) {
+        if (CollectionUtils.isEmpty(fields)) {
+            return fields;
+        }
+        fields.forEach(field -> {
+            field.setRelevanceId(uuid);
+            field.setRelevanceType(RelevanceTypeEnum.MODEL);
+        });
+        return fields;
     }
 
     /**
@@ -304,4 +354,19 @@ public class ModelGatewayImpl implements ModelGateway {
                 .peek(model -> model.setFields(listMap.get(model.getUuid()))).collect(Collectors.toSet());
     }
 
+    /**
+     * <h1>选项查询</h1>
+     *
+     * @param projectKey
+     * @return {@link Set<String>}
+     */
+    @Override
+    public Set<String> select(String projectKey) {
+        assert StringUtils.isNotBlank(projectKey);
+        LambdaQueryWrapper<ModelDO> lqw = new LambdaQueryWrapper<>();
+        lqw.select(ModelDO::getClassName)
+                .eq(ModelDO::getProjectKey, projectKey);
+        List<ModelDO> list = modelMapper.selectList(lqw);
+        return list.stream().map(ModelDO::getClassName).collect(Collectors.toSet());
+    }
 }
