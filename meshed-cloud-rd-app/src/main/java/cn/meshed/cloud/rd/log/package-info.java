@@ -4,4 +4,4 @@
  * @version 1.0
  * @author Vincent Vic
  */
-package cn.meshed.cloud.rd.domain.common;
+package cn.meshed.cloud.rd.log;

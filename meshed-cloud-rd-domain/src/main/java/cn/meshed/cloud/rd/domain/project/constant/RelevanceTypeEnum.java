@@ -1,5 +1,6 @@
 package cn.meshed.cloud.rd.domain.project.constant;
 
+import com.baomidou.mybatisplus.annotation.EnumValue;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.ToString;
@@ -30,6 +31,7 @@ public enum RelevanceTypeEnum {
     RESPONSE(3, "response"),
     ;
 
+    @EnumValue
     private final int value;
     private final String key;
 
