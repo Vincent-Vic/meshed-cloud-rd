@@ -101,11 +101,14 @@ public class ProjectGatewayImpl implements ProjectGateway {
     public PageResponse<Project> searchPageList(ProjectPageQry pageQry) {
         Page<Object> page = PageUtils.startPage(pageQry);
         LambdaQueryWrapper<ProjectDO> lqw = new LambdaQueryWrapper<>();
-        lqw.like(StringUtils.isNotBlank(pageQry.getKeyword()), ProjectDO::getName, pageQry.getKeyword())
-                .like(StringUtils.isNotBlank(pageQry.getKeyword()), ProjectDO::getDescription, pageQry.getKeyword())
-                .like(StringUtils.isNotBlank(pageQry.getKeyword()), ProjectDO::getKey, pageQry.getKeyword())
+        lqw
                 .eq(pageQry.getType() != null, ProjectDO::getType, pageQry.getType())
-                .eq(pageQry.getAccessMode() != null, ProjectDO::getAccessMode, pageQry.getAccessMode());
+                .eq(pageQry.getAccessMode() != null, ProjectDO::getAccessMode, pageQry.getAccessMode())
+                .and(StringUtils.isNotBlank(pageQry.getKeyword()), wrapper -> {
+                    wrapper.like(ProjectDO::getName, pageQry.getKeyword())
+                            .or().like(ProjectDO::getDescription, pageQry.getKeyword())
+                            .or().like(ProjectDO::getKey, pageQry.getKeyword());
+                }).orderByAsc(ProjectDO::getName);
 
         if (pageQry.getVisitType() != null) {
             handleVisitType(lqw, pageQry);
