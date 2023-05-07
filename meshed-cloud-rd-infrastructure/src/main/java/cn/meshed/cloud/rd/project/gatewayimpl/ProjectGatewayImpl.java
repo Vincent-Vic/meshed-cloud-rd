@@ -72,7 +72,7 @@ public class ProjectGatewayImpl implements ProjectGateway {
         AssertUtils.isTrue(StringUtils.isNotBlank(key), "唯一标识不能为空");
         AssertUtils.isTrue(status != null, "状态不能为空");
         LambdaUpdateWrapper<ProjectDO> luq = new LambdaUpdateWrapper<>();
-        luq.eq(ProjectDO::getKey, key).eq(ProjectDO::getStatus, status);
+        luq.eq(ProjectDO::getKey, key).set(ProjectDO::getStatus, status);
         return projectMapper.update(null, luq) > 0;
     }
 
