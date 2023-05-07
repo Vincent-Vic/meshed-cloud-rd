@@ -101,7 +101,7 @@ public class ProjectCmdExe implements CommandExecute<ProjectCmd, Response> {
 
     private RepositoryGroup buildGroup(ProjectCmd projectCmd) {
         CreateRepositoryGroup createRepositoryGroup = new CreateRepositoryGroup();
-        createRepositoryGroup.setGroupName(String.format(groupFormat, projectCmd.getKey()));
+        createRepositoryGroup.setGroupName(String.format(groupFormat, projectCmd.getKey()).toLowerCase());
         createRepositoryGroup.setVisible(getProjectVisible(projectCmd));
         createRepositoryGroup.setDescription(projectCmd.getDescription());
         return repositoryGateway.createRepositoryGroup(createRepositoryGroup);
