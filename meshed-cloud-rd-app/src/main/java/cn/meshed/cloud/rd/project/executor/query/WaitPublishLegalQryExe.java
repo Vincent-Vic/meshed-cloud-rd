@@ -14,11 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -64,7 +60,7 @@ public class WaitPublishLegalQryExe implements QueryExecute<String, Response> {
             Set<String> set = models.stream().map(Model::getClassName).collect(Collectors.toSet());
             classNames.addAll(set);
         }
-        return ResultUtils.of(modelGateway.checkLegalByClassNames(classNames));
+        return ResultUtils.of(modelGateway.checkLegalByClassNames(classNames), "类名存在");
     }
 
     private List<Field> toField(Service service) {
