@@ -63,6 +63,9 @@ public class ModelCmdExe implements CommandExecute<ModelCmd, Response> {
             //后续会进入新增逻辑，同名类是不允许的
             modelCmd.setUuid(null);
         }
+        if (modelCmd.getType() != ModelTypeEnum.ENUM) {
+            AssertUtils.isTrue(StringUtils.isNotBlank(modelCmd.getSuperClass()), "父类不能为空");
+        }
         Model model = null;
         //初始化模型
         if (StringUtils.isBlank(modelCmd.getUuid())) {
