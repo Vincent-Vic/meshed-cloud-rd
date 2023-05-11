@@ -147,16 +147,6 @@ public class WarehouseAddCmdExe implements CommandExecute<WarehouseAddCmd, Singl
         warehouse.setRepoUrl(repository.getRepoUrl());
         warehouse.setName(warehouseAddCmd.getName());
         warehouse.setRepoId(repository.getRepositoryId());
-        if (StringUtils.isNotBlank(warehouseAddCmd.getEngineTemplate())) {
-            //适配git 模板构建
-            EngineTemplate engineTemplate = engineTemplateQryExe.execute(warehouseAddCmd.getEngineTemplate());
-            //模板引擎存在，且是GIT模板
-            if (engineTemplate != null && engineTemplate.getType() == EngineTemplate.EngineTemplateType.GIT_TEMPLATE) {
-                warehouseAddCmd.setOperate(WarehouseOperateEnum.IMPORT);
-                warehouseAddCmd.setRepoUrl(engineTemplate.getOrigin() + engineTemplate.getId());
-            }
-        }
-
         if (warehouseAddCmd.getOperate() == WarehouseOperateEnum.IMPORT) {
             for (WarehouseRepoTypeEnum warehouseRepoType : WarehouseRepoTypeEnum.values()) {
                 if (warehouseAddCmd.getRepoUrl().contains(warehouseRepoType.getExt())) {
@@ -180,6 +170,15 @@ public class WarehouseAddCmdExe implements CommandExecute<WarehouseAddCmd, Singl
         Repository repository = repositoryGateway.getRepository(
                 project.getIdentity() + "/" + warehouseAddCmd.getRepoName());
         AssertUtils.isTrue(repository == null, warehouseAddCmd.getRepoName() + "仓库已经存在");
+        if (StringUtils.isNotBlank(warehouseAddCmd.getEngineTemplate())) {
+            //适配git 模板构建
+            EngineTemplate engineTemplate = engineTemplateQryExe.execute(warehouseAddCmd.getEngineTemplate());
+            //模板引擎存在，且是GIT模板
+            if (engineTemplate != null && engineTemplate.getType() == EngineTemplate.EngineTemplateType.GIT_TEMPLATE) {
+                warehouseAddCmd.setOperate(WarehouseOperateEnum.IMPORT);
+                warehouseAddCmd.setRepoUrl(engineTemplate.getOrigin() + engineTemplate.getId());
+            }
+        }
         CreateRepository createRepository = new CreateRepository();
         //核心在仓库层面为私有
         createRepository.setVisible(project.getAccessMode() == ProjectAccessModeEnum.CORE);
