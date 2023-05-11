@@ -69,7 +69,6 @@ public class CliGatewayImpl implements CliGateway {
         MavenCli cli = new MavenCli();
         String mvnHome = MavenCli.USER_MAVEN_CONFIGURATION_HOME.getAbsolutePath();
         System.getProperties().setProperty(MULTI_MODULE_PROJECT_DIRECTORY, mvnHome);
-        log.info("maven conf: {}", mvnHome);
         List<String> args = new ArrayList<>();
         args.add(ARCHETYPE_GENERATE_ARG);
         addArg(args, ARCHETYPE_GROUP_ID, archetype.getArchetypeGroupId());
