@@ -23,7 +23,6 @@ import com.alibaba.cola.exception.SysException;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -104,7 +103,7 @@ public class ModelCmdExe implements CommandExecute<ModelCmd, Response> {
         if (ModelTypeEnum.ENUM.equals(modelCmd.getType())) {
             List<EnumValueDTO> enumValues = modelCmd.getEnumValues();
             if (CollectionUtils.isNotEmpty(enumValues)) {
-                model.setEnumValues(getEnumValues(model, enumValues));
+                model.setEnumValues(getEnumValues(enumValues));
             }
         } else {
             List<RequestFieldDTO> fields = modelCmd.getFields();
@@ -118,12 +117,11 @@ public class ModelCmdExe implements CommandExecute<ModelCmd, Response> {
         return ResultUtils.of(uuid);
     }
 
-    @NotNull
-    private Set<EnumValue> getEnumValues(Model model, List<EnumValueDTO> enumValues) {
+    private Set<EnumValue> getEnumValues(List<EnumValueDTO> enumValues) {
         Set<EnumValue> values = CopyUtils.copySetProperties(enumValues, EnumValue::new);
-        AssertUtils.isTrue(values.size() == model.getEnumValues().size(), "枚举常量存在重复名称");
+        AssertUtils.isTrue(values.size() == enumValues.size(), "枚举常量存在重复名称");
         Set<Integer> valueSet = values.stream().map(EnumValue::getValue).collect(Collectors.toSet());
-        AssertUtils.isTrue(valueSet.size() == model.getEnumValues().size(), "枚举参数存在重复值");
+        AssertUtils.isTrue(valueSet.size() == enumValues.size(), "枚举参数存在重复值");
         return values;
     }
 }
