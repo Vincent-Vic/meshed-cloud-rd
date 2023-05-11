@@ -5,6 +5,7 @@ import cn.meshed.cloud.rd.codegen.ObjectEnumValue;
 import cn.meshed.cloud.rd.domain.cli.GenerateEnum;
 import cn.meshed.cloud.rd.domain.cli.gateway.CliGateway;
 import cn.meshed.cloud.rd.domain.common.VersionFormat;
+import cn.meshed.cloud.rd.domain.deployment.VersionOccupyGateway;
 import cn.meshed.cloud.rd.domain.deployment.strategy.AbstractServicePublish;
 import cn.meshed.cloud.rd.domain.deployment.strategy.PublishHandler;
 import cn.meshed.cloud.rd.domain.deployment.strategy.PublishType;
@@ -13,6 +14,7 @@ import cn.meshed.cloud.rd.domain.project.EnumValue;
 import cn.meshed.cloud.rd.domain.project.Model;
 import cn.meshed.cloud.rd.domain.project.gateway.ModelGateway;
 import cn.meshed.cloud.rd.domain.repo.Branch;
+import cn.meshed.cloud.rd.project.enums.ServiceModelTypeEnum;
 import cn.meshed.cloud.utils.AssertUtils;
 import cn.meshed.cloud.utils.CopyUtils;
 import org.apache.commons.collections4.CollectionUtils;
@@ -30,10 +32,11 @@ import java.util.stream.Collectors;
  */
 @Component
 public class EnumPublishHandler extends AbstractServicePublish implements PublishHandler<ModelPublish> {
+    private final VersionOccupyGateway versionOccupyGateway;
 
-
-    public EnumPublishHandler(ModelGateway modelGateway, CliGateway cliGateway) {
+    public EnumPublishHandler(ModelGateway modelGateway, CliGateway cliGateway, VersionOccupyGateway versionOccupyGateway) {
         super(modelGateway, cliGateway);
+        this.versionOccupyGateway = versionOccupyGateway;
     }
 
     /**
@@ -76,6 +79,8 @@ public class EnumPublishHandler extends AbstractServicePublish implements Publis
         }
         //转换数据
         Set<ObjectEnum> objectEnums = models.stream().map(this::toObjectEnum).collect(Collectors.toSet());
+        Set<String> uuidSet = models.stream().map(Model::getUuid).collect(Collectors.toSet());
+        versionOccupyGateway.saveBatch(modelPublish.getVersionId(), ServiceModelTypeEnum.MODEL, uuidSet);
         return generateModelWithPush(modelPublish.getSourceId(), objectEnums,
                 modelPublish.getBasePath(), modelPublish.getMessage(), modelPublish.getBranch());
     }
