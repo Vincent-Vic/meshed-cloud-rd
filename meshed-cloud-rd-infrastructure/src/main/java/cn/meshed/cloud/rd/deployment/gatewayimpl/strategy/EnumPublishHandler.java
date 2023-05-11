@@ -9,6 +9,7 @@ import cn.meshed.cloud.rd.domain.deployment.strategy.AbstractServicePublish;
 import cn.meshed.cloud.rd.domain.deployment.strategy.PublishHandler;
 import cn.meshed.cloud.rd.domain.deployment.strategy.PublishType;
 import cn.meshed.cloud.rd.domain.deployment.strategy.dto.ModelPublish;
+import cn.meshed.cloud.rd.domain.project.EnumValue;
 import cn.meshed.cloud.rd.domain.project.Model;
 import cn.meshed.cloud.rd.domain.project.gateway.ModelGateway;
 import cn.meshed.cloud.rd.domain.repo.Branch;
@@ -110,12 +111,19 @@ public class EnumPublishHandler extends AbstractServicePublish implements Publis
         objectEnum.setExplain(model.getName());
         objectEnum.setVersion(VersionFormat.version(model.getVersion()));
 
-        if (CollectionUtils.isNotEmpty(model.getFields())) {
+        if (CollectionUtils.isNotEmpty(model.getEnumValues())) {
             //枚举数据转换
-            Set<ObjectEnumValue> enumValues = CopyUtils.copySetProperties(model.getEnumValues(), ObjectEnumValue::new);
+            Set<ObjectEnumValue> enumValues = model.getEnumValues().stream()
+                    .map(this::toEnumValue).collect(Collectors.toSet());
             objectEnum.setEnumValues(enumValues);
         }
         return objectEnum;
+    }
+
+    private ObjectEnumValue toEnumValue(EnumValue enumValue) {
+        ObjectEnumValue value = CopyUtils.copy(enumValue, ObjectEnumValue.class);
+        value.setExplain(enumValue.getName());
+        return value;
     }
 
 }
