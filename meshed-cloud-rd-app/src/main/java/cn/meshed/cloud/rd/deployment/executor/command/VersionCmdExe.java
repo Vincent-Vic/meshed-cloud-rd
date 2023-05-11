@@ -2,11 +2,7 @@ package cn.meshed.cloud.rd.deployment.executor.command;
 
 import cn.meshed.cloud.cqrs.CommandExecute;
 import cn.meshed.cloud.rd.deployment.command.VersionCmd;
-import cn.meshed.cloud.rd.deployment.enums.EnvironmentEnum;
-import cn.meshed.cloud.rd.deployment.enums.PublishTypeEnum;
-import cn.meshed.cloud.rd.deployment.enums.VersionStatusEnum;
-import cn.meshed.cloud.rd.deployment.enums.VersionTypeEnum;
-import cn.meshed.cloud.rd.deployment.enums.WarehousePurposeTypeEnum;
+import cn.meshed.cloud.rd.deployment.enums.*;
 import cn.meshed.cloud.rd.deployment.event.VersionPublishEvent;
 import cn.meshed.cloud.rd.domain.common.VersionFormat;
 import cn.meshed.cloud.rd.domain.deployment.Version;
@@ -79,20 +75,21 @@ public class VersionCmdExe implements CommandExecute<VersionCmd, Response> {
         if (!response.isSuccess()) {
             return response;
         }
-
+        Version version = null;
         //区分新建和版本发布（含不同环境）
         if (versionCmd.getVersionId() == null) {
-            Version version = buildNewVersion(versionCmd);
+            version = buildNewVersion(versionCmd);
             //登记版本信息
-            versionGateway.registration(version);
+            version = versionGateway.registration(version);
+        } else {
+            version = versionGateway.query(versionCmd.getVersionId());
         }
-
+        AssertUtils.isTrue(version != null, "版本记录失败");
         /**
          * 1.代码推送
          * 2.审批（人工合并）
          * 3.修改状态
          */
-        Version version = versionGateway.query(versionCmd.getVersionId());
         VersionPublishEvent event = getVersionPublishEvent(versionCmd, version);
         if (workflowProperties.getEnable()) {
             String flowId = initiateApproval(event);
@@ -138,7 +135,9 @@ public class VersionCmdExe implements CommandExecute<VersionCmd, Response> {
 
     @NotNull
     private VersionPublishEvent getVersionPublishEvent(VersionCmd versionCmd, Version version) {
+        AssertUtils.isTrue(StringUtils.isNotBlank(version.getSourceId()), "来源ID不存在");
         Warehouse warehouse = warehouseGateway.query(version.getSourceId());
+        AssertUtils.isTrue(warehouse != null, "仓库不存在");
         VersionPublishEvent versionPublishEvent = new VersionPublishEvent();
         versionPublishEvent.setVersionId(version.getId());
         versionPublishEvent.setMessage(versionCmd.getCommitMessage());
