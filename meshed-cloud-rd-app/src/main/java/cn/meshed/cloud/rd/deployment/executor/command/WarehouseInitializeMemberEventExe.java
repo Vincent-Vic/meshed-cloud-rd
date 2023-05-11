@@ -36,7 +36,7 @@ public class WarehouseInitializeMemberEventExe implements EventExecute<Warehouse
      * @param warehouseInitializeEvent 执行器 {@link WarehouseInitializeEvent}
      * @return {@link Void}
      */
-    @Trend(key = "#{warehouseInitializeEvent.key}", content = "#{warehouseInitializeEvent.repositoryName}+仓库成员初始化")
+    @Trend(key = "#{warehouseInitializeEvent.projectKey}", content = "#{warehouseInitializeEvent.repositoryName}+仓库成员初始化")
     @Override
     public Response execute(WarehouseInitializeEvent warehouseInitializeEvent) {
         log.info("仓库初始化事件【仓库成员初始化消费者】: {}", JSONObject.toJSONString(warehouseInitializeEvent));
