@@ -13,11 +13,7 @@ import cn.meshed.cloud.rd.domain.deployment.gateway.WarehouseGateway;
 import cn.meshed.cloud.rd.domain.log.Trend;
 import cn.meshed.cloud.rd.domain.project.Project;
 import cn.meshed.cloud.rd.domain.project.gateway.ProjectGateway;
-import cn.meshed.cloud.rd.domain.repo.Branch;
-import cn.meshed.cloud.rd.domain.repo.CommitRepositoryFile;
-import cn.meshed.cloud.rd.domain.repo.CreateRepository;
-import cn.meshed.cloud.rd.domain.repo.Repository;
-import cn.meshed.cloud.rd.domain.repo.RepositoryFile;
+import cn.meshed.cloud.rd.domain.repo.*;
 import cn.meshed.cloud.rd.domain.repo.gateway.RepositoryGateway;
 import cn.meshed.cloud.rd.project.enums.ProjectAccessModeEnum;
 import cn.meshed.cloud.stream.StreamBridgeSender;
@@ -26,6 +22,7 @@ import cn.meshed.cloud.utils.ResultUtils;
 import com.alibaba.cola.dto.Response;
 import com.alibaba.cola.dto.SingleResponse;
 import com.alibaba.cola.exception.SysException;
+import com.alibaba.fastjson.JSONObject;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -35,9 +32,7 @@ import org.springframework.stereotype.Component;
 import java.util.Collections;
 
 import static cn.meshed.cloud.rd.domain.deployment.constant.MqConstant.WAREHOUSE_INITIALIZE;
-import static cn.meshed.cloud.rd.domain.repo.constant.RepoConstant.DEVELOP;
-import static cn.meshed.cloud.rd.domain.repo.constant.RepoConstant.MASTER;
-import static cn.meshed.cloud.rd.domain.repo.constant.RepoConstant.RELEASE;
+import static cn.meshed.cloud.rd.domain.repo.constant.RepoConstant.*;
 
 /**
  * <h1>新建仓库，非导入</h1>
@@ -65,6 +60,7 @@ public class WarehouseAddCmdExe implements CommandExecute<WarehouseAddCmd, Singl
     @Trend(key = "#{warehouseAddCmd.projectKey}", content = "创建仓库:+#{warehouseAddCmd.name}")
     @Override
     public SingleResponse<Warehouse> execute(WarehouseAddCmd warehouseAddCmd) {
+        log.info("项目仓库构建: {}", JSONObject.toJSONString(warehouseAddCmd));
         try {
             //校验
             Project project = checkWarehouseParamWithGetProject(warehouseAddCmd);

@@ -64,7 +64,7 @@ public class TrendAspect {
         }
         if (StringUtils.isNotBlank(key) && StringUtils.isNotBlank(content)) {
             //产生日志
-            log(proceed, key, content, sysException);
+            log(proceed, key.toUpperCase(), content, sysException);
         }
 
 
