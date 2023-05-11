@@ -67,6 +67,7 @@ public class Model implements Serializable {
     /**
      * 模型所属领域key
      */
+    @Setter(AccessLevel.NONE)
     private String domainKey;
 
     /**
@@ -112,6 +113,11 @@ public class Model implements Serializable {
     public void setProjectKey(String projectKey) {
         AssertUtils.isTrue(StringUtils.isNotBlank(projectKey), "项目唯一标识不能为空");
         this.projectKey = StringUtils.upperCase(projectKey);
+    }
+
+    public void setDomainKey(String domainKey) {
+        AssertUtils.isTrue(StringUtils.isNotBlank(domainKey), "领域标识不能为空");
+        this.domainKey = StringUtils.upperCase(domainKey);
     }
 
     public void initModel(Project project, String classNamePrefix) {
