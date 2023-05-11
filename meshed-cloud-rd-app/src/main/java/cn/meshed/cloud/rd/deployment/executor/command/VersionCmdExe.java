@@ -62,7 +62,7 @@ public class VersionCmdExe implements CommandExecute<VersionCmd, Response> {
      * @param versionCmd 执行器 {@link VersionCmd}
      * @return {@link Response}
      */
-    @Trend(key = "#{versionCmd.projectKey}", content = "#{versionCmd.commitMessage}: 提交发布")
+    @Trend(key = "#{versionCmd.projectKey}", content = "版本发布，提交信息: +#{versionCmd.commitMessage}")
     @Transactional
     @Override
     public Response execute(VersionCmd versionCmd) {
@@ -78,9 +78,8 @@ public class VersionCmdExe implements CommandExecute<VersionCmd, Response> {
         Version version = null;
         //区分新建和版本发布（含不同环境）
         if (versionCmd.getVersionId() == null) {
-            version = buildNewVersion(versionCmd);
             //登记版本信息
-            version = versionGateway.registration(version);
+            version = versionGateway.registration(buildNewVersion(versionCmd));
         } else {
             version = versionGateway.query(versionCmd.getVersionId());
         }
@@ -100,11 +99,6 @@ public class VersionCmdExe implements CommandExecute<VersionCmd, Response> {
             //streamBridgeSender.send(VERSION_PUBLISH_APPROVE, event);
         }
 
-        //更新信息
-
-        if (NOT_ALLOW_STATUS.contains(version.getStatus())) {
-            throw new SysException("存在发布队列，禁止重复");
-        }
         version.setEnvironment(versionCmd.getEnvironment());
         version.setStatus(VersionStatusEnum.SUBMIT);
         //修改状态环境信息
