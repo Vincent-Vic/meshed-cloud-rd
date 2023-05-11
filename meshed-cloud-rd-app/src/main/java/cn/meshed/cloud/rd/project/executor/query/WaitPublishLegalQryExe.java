@@ -42,7 +42,8 @@ public class WaitPublishLegalQryExe implements QueryExecute<String, Response> {
         Set<ServiceGroup> serviceGroups = serviceGroupGateway.waitPublishListByProject(projectKey);
         Set<Model> models = modelGateway.waitPublishModelListByProject(projectKey);
         Set<Model> enums = modelGateway.waitPublishEnumListByProject(projectKey);
-        if (CollectionUtils.isEmpty(serviceGroups) && CollectionUtils.isEmpty(models) && CollectionUtils.isEmpty(enums)) {
+        models.addAll(enums);
+        if (CollectionUtils.isEmpty(serviceGroups) && CollectionUtils.isEmpty(models)) {
             return ResultUtils.fail("不存在待发布模型和服务");
         }
         Set<String> classNames = new HashSet<>();

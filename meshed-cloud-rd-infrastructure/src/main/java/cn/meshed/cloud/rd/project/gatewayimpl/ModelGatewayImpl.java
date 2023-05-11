@@ -405,7 +405,7 @@ public class ModelGatewayImpl implements ModelGateway {
     public Set<Model> waitPublishModelListByProject(String projectKey) {
         Set<Model> models = getWaitPublishModels(projectKey, false);
         if (CollectionUtils.isEmpty(models)) {
-            return models;
+            return new HashSet<>();
         }
         return assembleModelDetailsList(models);
     }
@@ -421,7 +421,7 @@ public class ModelGatewayImpl implements ModelGateway {
     public Set<Model> waitPublishEnumListByProject(String projectKey) {
         Set<Model> models = getWaitPublishModels(projectKey, true);
         if (CollectionUtils.isEmpty(models)) {
-            return models;
+            return new HashSet<>();
         }
         return assembleEnumDetailsList(models);
     }
@@ -452,7 +452,7 @@ public class ModelGatewayImpl implements ModelGateway {
     public Set<String> scanPackageNameByClassNames(Set<String> classNames) {
         List<ModelDO> list = getModelSimpleListByClassNames(classNames);
         if (CollectionUtils.isEmpty(list)) {
-            return Collections.emptySet();
+            return new HashSet<>();
         }
         return list.stream().map(ModelDO::getPackageName).collect(Collectors.toSet());
     }

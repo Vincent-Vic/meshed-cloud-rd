@@ -51,7 +51,7 @@ public class TrendAspect {
                 content = resolverKit.resolverContent(trend.content(), proceedingJoinPoint);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("日志记录失败: {}", e.getMessage());
         }
 
         SysException sysException = null;
