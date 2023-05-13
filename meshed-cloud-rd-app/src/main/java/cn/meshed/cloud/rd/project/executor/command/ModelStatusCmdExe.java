@@ -39,7 +39,7 @@ public class ModelStatusCmdExe implements CommandExecute<ModelStatusCmd, Respons
         AssertUtils.isTrue(model != null, "模型不存在");
         assert model != null;
         VersionOccupy occupy = versionOccupyGateway.query(ServiceModelTypeEnum.MODEL, model.getUuid());
-        AssertUtils.isTrue(occupy != null, "模型正在处理中无法操作");
+        AssertUtils.isTrue(occupy == null, "模型正在处理中无法操作");
         //完成必须从编辑状态转换过来
         if (ReleaseStatusEnum.PROCESSING.equals(modelStatusCmd.getReleaseStatus())) {
             AssertUtils.isTrue(model.getReleaseStatus() == ReleaseStatusEnum.EDIT, "模型当前并非编辑状态，无法修改为完成");
