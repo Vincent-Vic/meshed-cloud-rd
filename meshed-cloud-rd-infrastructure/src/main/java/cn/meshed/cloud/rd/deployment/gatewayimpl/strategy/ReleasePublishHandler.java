@@ -9,7 +9,6 @@ import cn.meshed.cloud.rd.domain.project.ServiceItem;
 import cn.meshed.cloud.rd.domain.project.gateway.ModelGateway;
 import cn.meshed.cloud.rd.domain.project.gateway.ServiceGateway;
 import cn.meshed.cloud.rd.project.enums.ReleaseStatusEnum;
-import cn.meshed.cloud.rd.project.enums.ServiceModelStatusEnum;
 import cn.meshed.cloud.rd.project.enums.ServiceModelTypeEnum;
 import cn.meshed.cloud.rd.project.query.ModelPageQry;
 import cn.meshed.cloud.rd.project.query.ServicePageQry;
@@ -76,7 +75,6 @@ public class ReleasePublishHandler implements PublishHandler<Publish> {
         PageResponse<Model> pageResponse = modelGateway.searchPageList(pageQry);
         if (CollectionUtils.isNotEmpty(pageResponse.getData())) {
             Set<String> uuid = pageResponse.getData().stream().map(Model::getUuid).collect(Collectors.toSet());
-            modelGateway.batchUpdateStatus(uuid, ServiceModelStatusEnum.RELEASE, ReleaseStatusEnum.RELEASE);
             versionOccupyGateway.saveBatch(versionId, ServiceModelTypeEnum.MODEL, uuid);
         }
     }
